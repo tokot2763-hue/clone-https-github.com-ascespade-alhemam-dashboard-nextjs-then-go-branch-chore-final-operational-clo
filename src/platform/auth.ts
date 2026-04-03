@@ -16,7 +16,7 @@ export interface Session {
 }
 
 export async function getSession(): Promise<Session | null> {
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   
   const { data: { session } } = await supabase.auth.getSession();
   
@@ -94,7 +94,7 @@ export async function requireAuth() {
 }
 
 export async function signIn(email: string, password: string) {
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -109,12 +109,12 @@ export async function signIn(email: string, password: string) {
 }
 
 export async function signOut() {
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   await supabase.auth.signOut();
 }
 
 export async function getUserRole(userId: string) {
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   
   const { data } = await supabase
     .from('iam_users')

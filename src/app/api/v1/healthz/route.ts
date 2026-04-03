@@ -3,7 +3,7 @@ import { createServerClient } from '@/platform/supabase-server';
 
 export async function GET() {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     
     const { count: pagesCount } = await supabase
       .from('nav_pages')

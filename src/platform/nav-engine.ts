@@ -22,7 +22,7 @@ export interface NavTree {
 }
 
 export async function buildNavTree(userId: string, roleCode: string): Promise<NavTree> {
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
 
   // nav_sections: section_key, label, icon_key
   const { data: sections } = await supabase
