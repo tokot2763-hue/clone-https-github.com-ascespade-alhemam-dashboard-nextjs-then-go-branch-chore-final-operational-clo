@@ -24,30 +24,35 @@ export interface NavTree {
 export async function buildNavTree(userId: string, roleCode: string): Promise<NavTree> {
   const supabase = createServiceClient();
 
+  // Get sections first - simple select without ordering
   const { data: allSections, error: sectionsError } = await supabase
     .from('nav_sections')
-    .select('id, section_key, label, icon_key, sort_order')
-    .order('sort_order');
+    .select('*');
 
   console.log('nav-engine: sections query:', { count: allSections?.length, error: sectionsError });
 
   if (!allSections || allSections.length === 0) {
+    console.log('nav-engine: no sections found');
     return { sections: [] };
   }
 
+  // Get all pages - simple select
   const { data: pages, error: pagesError } = await supabase
     .from('nav_pages')
-    .select('id, page_key, route_path, name, section_key, icon_key, sort_order');
+    .select('*');
 
   console.log('nav-engine: pages query:', { count: pages?.length, error: pagesError });
 
   if (!pages || pages.length === 0) {
+    console.log('nav-engine: no pages found');
     return { sections: [] };
   }
 
+  // Group pages by section_key
   const pagesBySection = new Map<string, NavPage[]>();
   
-  pages.forEach(page => {
+  for (const page of pages) {
+    if (!page.section_key) continue;
     if (!pagesBySection.has(page.section_key)) {
       pagesBySection.set(page.section_key, []);
     }
@@ -58,20 +63,24 @@ export async function buildNavTree(userId: string, roleCode: string): Promise<Na
       icon: page.icon_key,
       sort_order: page.sort_order,
     });
-  });
+  }
 
+  // Build sections with their pages, sorted by sort_order
   const navSections: NavSection[] = allSections
     .map(section => {
-      const sectionPages = pagesBySection.get(section.section_key) || [];
+      const sectionKey = section.section_key;
+      const sectionPages = (pagesBySection.get(sectionKey) || [])
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
       return {
         id: section.id,
         name: section.label,
-        code: section.section_key,
+        code: sectionKey,
         icon: section.icon_key,
         sort_order: section.sort_order,
-        pages: sectionPages.sort((a, b) => a.sort_order - b.sort_order),
+        pages: sectionPages,
       };
-    });
+    })
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
   console.log('nav-engine: returning sections:', navSections.length, 'with pages:', navSections.map(s => `${s.name}: ${s.pages.length}`).join(', '));
   return { sections: navSections };
