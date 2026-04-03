@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Shield, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 const DEMO_ACCOUNTS = [
-  { email: 'admin@alhemam.sa', password: 'test123456', role: 'Admin' },
-  { email: 'doctor@alhemam.sa', password: 'test123456', role: 'Doctor' },
-  { email: 'nurse@alhemam.sa', password: 'test123456', role: 'Nurse' },
-  { email: 'patient@alhemam.sa', password: 'test123456', role: 'Patient' },
-  { email: 'pharmacist@alhemam.sa', password: 'test123456', role: 'Pharmacist' },
-  { email: 'accountant@alhemam.sa', password: 'test123456', role: 'Accountant' },
+  { email: 'admin@alhemam.sa', password: 'admin123456', role: 'Admin' },
+  { email: 'doctor@alhemam.sa', password: 'admin123456', role: 'Doctor' },
+  { email: 'nurse@alhemam.sa', password: 'admin123456', role: 'Nurse' },
+  { email: 'patient@alhemam.sa', password: 'admin123456', role: 'Patient' },
+  { email: 'pharmacist@alhemam.sa', password: 'admin123456', role: 'Pharmacist' },
+  { email: 'accountant@alhemam.sa', password: 'admin123456', role: 'Accountant' },
 ];
 
 export default function LoginPage() {
@@ -67,8 +67,10 @@ export default function LoginPage() {
         throw new Error(data.error || 'Login failed');
       }
 
-      console.log('Login successful, redirecting...');
-      window.location.href = '/dashboard';
+      // Get token from response and pass via URL
+      const token = data.session?.access_token;
+      console.log('Login successful, redirecting with token...');
+      window.location.href = token ? `/dashboard?token=${token.substring(0, 50)}` : '/dashboard';
     } catch (err: any) {
       console.error('Login error:', err);
       setError(err.message);

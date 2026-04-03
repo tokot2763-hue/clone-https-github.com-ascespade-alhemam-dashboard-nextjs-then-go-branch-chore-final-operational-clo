@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { cookies, headers } from 'next/headers';
+import { requestApi } from 'next/dist/server/api-utils';
 
 const supabaseUrl = 'https://xjcxsdoblqckxafvzqsa.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqY3hzZG9ibHFja3hhZnZ6cXNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNzEyNzQsImV4cCI6MjA5MDc0NzI3NH0.1QiRSM16AcEmAFwKyqIbXZvhCtev7iUbsBDXZ9PB3Rc';
@@ -11,10 +12,12 @@ export async function createServerClient(): Promise<SupabaseClient> {
   const accessToken = cookieStore.get('sb-access-token')?.value;
   const refreshToken = cookieStore.get('sb-refresh-token')?.value;
   
-  // Also try Authorization header
+  // Try Authorization header
   const authHeader = headerStore.get('authorization') || headerStore.get('Authorization');
   const bearerToken = authHeader?.replace('Bearer ', '');
 
+  // Try query param token - we'll need to get from URL in calling code
+  // We'll pass token explicitly when needed
   const tokenToUse = accessToken || bearerToken;
 
   return createClient(supabaseUrl, supabaseKey, {
