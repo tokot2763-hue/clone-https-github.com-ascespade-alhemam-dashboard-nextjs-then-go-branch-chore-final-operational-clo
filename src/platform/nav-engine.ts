@@ -1,4 +1,4 @@
-import { createServerClient } from './supabase-server';
+import { createServiceClient } from './supabase-server';
 
 export interface NavSection {
   id: string;
@@ -22,7 +22,7 @@ export interface NavTree {
 }
 
 export async function buildNavTree(userId: string, roleCode: string): Promise<NavTree> {
-  const supabase = await createServerClient();
+  const supabase = createServiceClient();
 
   const { data: sections } = await supabase
     .from('nav_sections')
