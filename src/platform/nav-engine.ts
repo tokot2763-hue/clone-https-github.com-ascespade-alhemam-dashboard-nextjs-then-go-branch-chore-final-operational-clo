@@ -24,10 +24,12 @@ export interface NavTree {
 export async function buildNavTree(userId: string, roleCode: string): Promise<NavTree> {
   const supabase = createServiceClient();
 
-  // Get sections first - simple select without ordering
+  // Get sections with is_active filter and explicit column selection
   const { data: allSections, error: sectionsError } = await supabase
     .from('nav_sections')
-    .select('*');
+    .select('id, section_key, label, icon_key, sort_order')
+    .eq('is_active', true)
+    .order('sort_order');
 
   console.log('nav-engine: sections query:', { count: allSections?.length, error: sectionsError });
 
@@ -36,10 +38,15 @@ export async function buildNavTree(userId: string, roleCode: string): Promise<Na
     return { sections: [] };
   }
 
-  // Get all pages - simple select
+  const sectionKeys = allSections.map(s => s.section_key);
+
+  // Get pages with is_active filter, is_sidebar filter, and explicit column selection
   const { data: pages, error: pagesError } = await supabase
     .from('nav_pages')
-    .select('*');
+    .select('id, page_key, route_path, name, section_key, icon_key, sort_order')
+    .in('section_key', sectionKeys)
+    .eq('is_active', true)
+    .eq('is_sidebar', true);
 
   console.log('nav-engine: pages query:', { count: pages?.length, error: pagesError });
 
@@ -80,7 +87,7 @@ export async function buildNavTree(userId: string, roleCode: string): Promise<Na
         pages: sectionPages,
       };
     })
-    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    .filter(s => s.pages.length > 0);
 
   console.log('nav-engine: returning sections:', navSections.length, 'with pages:', navSections.map(s => `${s.name}: ${s.pages.length}`).join(', '));
   return { sections: navSections };
