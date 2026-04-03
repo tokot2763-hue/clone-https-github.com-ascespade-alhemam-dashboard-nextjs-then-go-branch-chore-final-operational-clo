@@ -2,45 +2,44 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Shield, Lock, Eye, EyeOff, Loader2, Moon, Sun, Globe } from 'lucide-react';
 import { useTranslation } from '@/i18n';
 import { useTheme } from '@/ui/providers/ThemeProvider';
 
 const DEMO_ACCOUNTS = [
-  { email: 'admin@alhemam.sa', password: 'admin123456', role: 'Admin' },
-  { email: 'doctor@alhemam.sa', password: 'admin123456', role: 'Doctor' },
-  { email: 'nurse@alhemam.sa', password: 'admin123456', role: 'Nurse' },
-  { email: 'patient@alhemam.sa', password: 'admin123456', role: 'Patient' },
-  { email: 'pharmacist@alhemam.sa', password: 'admin123456', role: 'Pharmacist' },
-  { email: 'accountant@alhemam.sa', password: 'admin123456', role: 'Accountant' },
+  { email: 'admin@alhemam.sa', password: 'admin123456', roleKey: 'admin' },
+  { email: 'doctor@alhemam.sa', password: 'admin123456', roleKey: 'doctor' },
+  { email: 'nurse@alhemam.sa', password: 'admin123456', roleKey: 'nurse' },
+  { email: 'patient@alhemam.sa', password: 'admin123456', roleKey: 'patient' },
+  { email: 'pharmacist@alhemam.sa', password: 'admin123456', roleKey: 'pharmacist' },
+  { email: 'accountant@alhemam.sa', password: 'admin123456', roleKey: 'accountant' },
 ];
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t, locale } = useTranslation();
+  const { theme, setTheme, locale: appLocale, setLocale } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
+  const toggleLocale = () => setLocale(appLocale === 'ar' ? 'en' : 'ar');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
     try {
       const res = await fetch('/api/v1/auth/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Login failed');
-      }
-
+      if (!res.ok) throw new Error(data.error || t('auth.loginFailed'));
       window.location.href = '/dashboard';
     } catch (err: any) {
       setError(err.message);
@@ -50,31 +49,18 @@ export default function LoginPage() {
   };
 
   const handleQuickLogin = async (email: string, password: string) => {
-    console.log('Quick login clicked for:', email);
     setLoading(true);
     setError('');
-
     try {
       const res = await fetch('/api/v1/auth/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-
-      console.log('Response status:', res.status);
       const data = await res.json();
-      console.log('Response data:', data);
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Login failed');
-      }
-
-      // Get token from response and pass via URL
-      const token = data.session?.access_token;
-      console.log('Login successful, redirecting with token...');
-      window.location.href = token ? `/dashboard?token=${token.substring(0, 50)}` : '/dashboard';
+      if (!res.ok) throw new Error(data.error || t('auth.loginFailed'));
+      window.location.href = '/dashboard';
     } catch (err: any) {
-      console.error('Login error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -82,47 +68,57 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-neutral-900 to-neutral-800 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-gradient-to-b dark:from-neutral-900 dark:to-neutral-800 from-gray-100 to-gray-200 flex items-center justify-center p-4">
+      {/* Theme/Locale Toggle */}
+      <div className="fixed top-4 right-4 flex gap-2">
+        <button onClick={toggleTheme} className="p-2 rounded-lg bg-neutral-800 dark:bg-neutral-700 hover:bg-neutral-700 dark:hover:bg-neutral-600" title={t('settings.theme')}>
+          {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+        </button>
+        <button onClick={toggleLocale} className="p-2 rounded-lg bg-neutral-800 dark:bg-neutral-700 hover:bg-neutral-700 dark:hover:bg-neutral-600 font-bold" title={t('settings.language')}>
+          {appLocale === 'ar' ? 'ع' : 'EN'}
+        </button>
+      </div>
+
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Shield className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-white">Alhemam</h1>
-          <p className="text-neutral-400 mt-2">Healthcare Platform Login</p>
+          <h1 className="text-3xl font-bold text-white dark:text-white text-gray-900">{t('app.name')}</h1>
+          <p className="text-neutral-400 mt-2 dark:text-neutral-400 text-gray-600">{t('app.tagline')}</p>
         </div>
 
-        <div className="bg-neutral-800 rounded-xl border border-neutral-700 p-6">
+        <div className="bg-neutral-800 dark:bg-neutral-800 bg-white rounded-xl border border-neutral-700 dark:border-neutral-700 border-gray-200 p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-1">
-                Email
+              <label className="block text-sm font-medium text-neutral-300 dark:text-neutral-300 text-gray-700 mb-1">
+                {t('auth.email')}
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 bg-neutral-700 border border-neutral-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-                placeholder="Enter your email"
+                className="w-full px-4 py-2 bg-neutral-700 dark:bg-neutral-700 bg-gray-100 border border-neutral-600 dark:border-neutral-600 border-gray-300 rounded-lg text-white dark:text-white text-gray-900 focus:outline-none focus:border-emerald-500"
+                placeholder={t('auth.enterEmail')}
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-1">
-                Password
+              <label className="block text-sm font-medium text-neutral-300 dark:text-neutral-300 text-gray-700 mb-1">
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-2 bg-neutral-700 border border-neutral-600 rounded-lg text-white focus:outline-none focus:border-emerald-500 pr-10"
-                  placeholder="Enter your password"
+                  className="w-full px-4 py-2 bg-neutral-700 dark:bg-neutral-700 bg-gray-100 border border-neutral-600 dark:border-neutral-600 border-gray-300 rounded-lg text-white dark:text-white text-gray-900 focus:outline-none focus:border-emerald-500 pr-10"
+                  placeholder={t('auth.enterPassword')}
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-400 text-gray-500 hover:text-white dark:hover:text-white"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -141,14 +137,14 @@ export default function LoginPage() {
               className="w-full py-2 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? t('auth.signingIn') : t('auth.signIn')}
             </button>
           </form>
         </div>
 
         <div className="mt-6">
-          <p className="text-sm text-neutral-400 text-center mb-3">
-            Quick Login (Demo Accounts)
+          <p className="text-sm text-neutral-400 dark:text-neutral-400 text-gray-600 text-center mb-3">
+            {t('auth.demoAccounts')}
           </p>
           <div className="grid grid-cols-2 gap-2">
             {DEMO_ACCOUNTS.slice(0, 4).map((account) => (
@@ -156,9 +152,9 @@ export default function LoginPage() {
                 key={account.email}
                 onClick={() => handleQuickLogin(account.email, account.password)}
                 disabled={loading}
-                className="px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-lg text-sm text-neutral-300 hover:bg-neutral-600 hover:border-emerald-500 transition-colors disabled:opacity-50"
+                className="px-3 py-2 bg-neutral-700 dark:bg-neutral-700 bg-gray-100 border border-neutral-600 dark:border-neutral-600 border-gray-300 rounded-lg text-sm text-neutral-300 dark:text-neutral-300 text-gray-700 hover:bg-neutral-600 dark:hover:bg-neutral-600 hover:border-emerald-500 transition-colors disabled:opacity-50"
               >
-                {account.role}
+                {t(`role.${account.roleKey}`)}
               </button>
             ))}
           </div>
@@ -168,9 +164,9 @@ export default function LoginPage() {
                 key={account.email}
                 onClick={() => handleQuickLogin(account.email, account.password)}
                 disabled={loading}
-                className="px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-lg text-sm text-neutral-300 hover:bg-neutral-600 hover:border-emerald-500 transition-colors disabled:opacity-50"
+                className="px-3 py-2 bg-neutral-700 dark:bg-neutral-700 bg-gray-100 border border-neutral-600 dark:border-neutral-600 border-gray-300 rounded-lg text-sm text-neutral-300 dark:text-neutral-300 text-gray-700 hover:bg-neutral-600 dark:hover:bg-neutral-600 hover:border-emerald-500 transition-colors disabled:opacity-50"
               >
-                {account.role}
+                {t(`role.${account.roleKey}`)}
               </button>
             ))}
           </div>

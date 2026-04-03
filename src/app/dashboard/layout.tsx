@@ -58,7 +58,7 @@ export default async function DashboardLayout({
   const navTree = session ? await getNavTree() : { sections: [] };
 
   return (
-    <div className="flex min-h-screen bg-neutral-900">
+    <div className="flex min-h-screen dark:bg-neutral-900 bg-gray-50">
       {session ? (
         <Sidebar 
           user={session.user} 
