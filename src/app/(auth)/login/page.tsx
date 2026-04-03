@@ -18,14 +18,17 @@ const DEMO_ACCOUNTS = [
 export default function LoginPage() {
   const router = useRouter();
   const { t, locale } = useTranslation();
-  const { theme, setTheme, locale: appLocale, setLocale } = useTheme();
+  const { theme, setTheme, resolvedTheme, locale: appLocale, setLocale } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
+  const toggleThemeList: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
+  const currentIndex = toggleThemeList.indexOf(theme);
+  const nextTheme = toggleThemeList[(currentIndex + 1) % 3];
+  const toggleTheme = () => setTheme(nextTheme);
   const toggleLocale = () => setLocale(appLocale === 'ar' ? 'en' : 'ar');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,10 +74,10 @@ export default function LoginPage() {
     <main className="min-h-screen bg-gradient-to-b dark:from-neutral-900 dark:to-neutral-800 from-gray-100 to-gray-200 flex items-center justify-center p-4">
       {/* Theme/Locale Toggle */}
       <div className="fixed top-4 right-4 flex gap-2">
-        <button onClick={toggleTheme} className="p-2 rounded-lg bg-neutral-800 dark:bg-neutral-700 hover:bg-neutral-700 dark:hover:bg-neutral-600" title={t('settings.theme')}>
-          {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+        <button onClick={toggleTheme} className="p-2 rounded-lg dark:bg-neutral-700 bg-gray-200 dark:hover:bg-neutral-600 hover:bg-gray-300" title={t('settings.theme')}>
+          {resolvedTheme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
         </button>
-        <button onClick={toggleLocale} className="p-2 rounded-lg bg-neutral-800 dark:bg-neutral-700 hover:bg-neutral-700 dark:hover:bg-neutral-600 font-bold" title={t('settings.language')}>
+        <button onClick={toggleLocale} className="p-2 rounded-lg dark:bg-neutral-700 bg-gray-200 dark:hover:bg-neutral-600 hover:bg-gray-300 font-bold" title={t('settings.language')}>
           {appLocale === 'ar' ? 'ع' : 'EN'}
         </button>
       </div>

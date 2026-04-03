@@ -69,15 +69,18 @@ export default function Sidebar({ user, navTree }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   
   // Get theme/locale from ThemeProvider context
-  const { theme, locale, setTheme, setLocale } = useTheme();
+  const { theme, resolvedTheme, locale, setTheme, setLocale } = useTheme();
   const { t } = useTranslation();
 
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
+  const toggleThemeList: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
+  const currentIndex = toggleThemeList.indexOf(theme);
+  const nextTheme = toggleThemeList[(currentIndex + 1) % 3];
+  const toggleTheme = () => setTheme(nextTheme);
+  const toggleLocale = () => setLocale(locale === 'ar' ? 'en' : 'ar');
 
-  const toggleLocale = () => {
-    setLocale(locale === 'ar' ? 'en' : 'ar');
+  const getThemeIcon = () => {
+    if (theme === 'system') return '🌓';
+    return resolvedTheme === 'dark' ? '🌙' : '☀️';
   };
 
   const handleLogout = async () => {
@@ -134,10 +137,10 @@ export default function Sidebar({ user, navTree }: SidebarProps) {
               <button
                 onClick={toggleTheme}
                 className="flex-1 flex items-center justify-center gap-1 p-2 dark:bg-neutral-700 bg-gray-100 hover:dark:bg-neutral-600 hover:bg-gray-200 rounded-lg dark:text-neutral-300 text-gray-700 transition-colors"
-                title={theme === 'dark' ? t('settings.dark') : t('settings.light')}
+                title={`${t('settings.theme')}: ${theme}`}
               >
-                {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                <span className="text-xs">{theme === 'dark' ? '🌙' : '☀️'}</span>
+                {resolvedTheme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                <span className="text-xs">{getThemeIcon()}</span>
               </button>
               <button
                 onClick={toggleLocale}
