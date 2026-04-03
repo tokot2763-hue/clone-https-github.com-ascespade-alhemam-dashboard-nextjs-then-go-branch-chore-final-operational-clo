@@ -15,7 +15,10 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronDown
+  ChevronDown,
+  Moon,
+  Sun,
+  Globe
 } from 'lucide-react';
 
 interface User {
@@ -62,6 +65,32 @@ export default function Sidebar({ user, navTree }: SidebarProps) {
   const pathname = usePathname();
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [mobileOpen, setMobileOpen] = useState(false);
+  
+  // Theme & Locale from sessionStorage
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window === 'undefined') return 'dark';
+    return (sessionStorage.getItem('theme') as 'dark' | 'light') || 'dark';
+  });
+  const [locale, setLocale] = useState<'ar' | 'en'>(() => {
+    if (typeof window === 'undefined') return 'ar';
+    return (sessionStorage.getItem('locale') as 'ar' | 'en') || 'ar';
+  });
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    sessionStorage.setItem('theme', newTheme);
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(newTheme);
+  };
+
+  const toggleLocale = () => {
+    const newLocale = locale === 'ar' ? 'en' : 'ar';
+    setLocale(newLocale);
+    sessionStorage.setItem('locale', newLocale);
+    document.documentElement.dir = newLocale === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = newLocale;
+  };
 
   const handleLogout = async () => {
     try {
@@ -110,6 +139,26 @@ export default function Sidebar({ user, navTree }: SidebarProps) {
             <div className="mt-3 p-2 bg-neutral-700/50 rounded-lg">
               <p className="text-sm text-white font-medium">{user.full_name || user.email}</p>
               <p className="text-xs text-emerald-400">{user.role_name || user.role_code}</p>
+            </div>
+            
+            {/* Theme & Language Toggles */}
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={toggleTheme}
+                className="flex-1 flex items-center justify-center gap-1 p-2 bg-neutral-700 hover:bg-neutral-600 rounded-lg text-neutral-300 transition-colors"
+                title={theme === 'dark' ? 'Dark mode' : 'Light mode'}
+              >
+                {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                <span className="text-xs">{theme === 'dark' ? '🌙' : '☀️'}</span>
+              </button>
+              <button
+                onClick={toggleLocale}
+                className="flex-1 flex items-center justify-center gap-1 p-2 bg-neutral-700 hover:bg-neutral-600 rounded-lg text-neutral-300 transition-colors"
+                title={locale === 'ar' ? 'العربية' : 'English'}
+              >
+                <Globe className="w-4 h-4" />
+                <span className="text-xs font-bold">{locale === 'ar' ? 'ع' : 'EN'}</span>
+              </button>
             </div>
           </div>
 
