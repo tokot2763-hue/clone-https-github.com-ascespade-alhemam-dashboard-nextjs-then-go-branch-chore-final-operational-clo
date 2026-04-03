@@ -25,9 +25,12 @@ export async function getSession(): Promise<Session | null> {
   }
   
   if (!session?.user) {
+    console.log('getSession: No session found - returning null');
     return null;
   }
 
+  console.log('getSession: Found user:', session.user.email);
+  
   let role_code = 'admin';
   let role_name = 'Admin';
   let role_id = null;
