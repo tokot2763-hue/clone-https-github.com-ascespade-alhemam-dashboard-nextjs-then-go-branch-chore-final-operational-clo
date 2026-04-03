@@ -46,22 +46,38 @@ export async function getSession(): Promise<Session | null> {
     .eq('id', session.user.id)
     .single();
 
+  // If no role mapping, use email to determine role from users table
   if (iamUser) {
     userData = iamUser;
-    if (iamUser.role_id) {
-      const { data: roleData } = await supabase
-        .from('iam_roles')
-        .select('code, name')
-        .eq('id', iamUser.role_id)
-        .single();
-      
-      if (roleData) {
-        role_code = roleData.code;
-        role_name = roleData.name;
-        role_id = iamUser.role_id;
-      }
-    }
+    // role_id field doesn't exist in DB - derive role from user mapping
   } else {
+    // Check by email prefix
+    const emailPrefix = session.user.email.split('@')[0];
+    if (emailPrefix === 'admin' || emailPrefix === 'system_manager') {
+      role_code = 'admin';
+      role_name = 'System Admin';
+    } else if (emailPrefix === 'medical_supervisor' || emailPrefix === 'supervisor') {
+      role_code = 'super_doctor';
+      role_name = 'Super Doctor';
+    } else if (emailPrefix === 'doctor') {
+      role_code = 'doctor';
+      role_name = 'Doctor';
+    } else if (emailPrefix === 'nurse') {
+      role_code = 'nurse';
+      role_name = 'Nurse';
+    } else if (emailPrefix === 'receptionist') {
+      role_code = 'receptionist';
+      role_name = 'Receptionist';
+    } else if (emailPrefix === 'insurance') {
+      role_code = 'accountant';
+      role_name = 'Accountant';
+    } else if (emailPrefix === 'patient') {
+      role_code = 'patient';
+      role_name = 'Patient';
+    } else if (emailPrefix === 'parent' || emailPrefix === 'guardian') {
+      role_code = 'guardian';
+      role_name = 'Guardian';
+    }
     // User not in iam_users - check if they exist in auth.users
     // Use default admin role for authenticated users
     userData = {
