@@ -12,49 +12,63 @@ async function test() {
     const context = await browser.newContext();
     const page = await context.newPage();
 
-    // Login via UI
-    console.log('1. Logging in...');
+    console.log('Logging in...');
     await page.goto(BASE_URL + '/login', { waitUntil: 'networkidle' });
     await page.fill('input[type="email"]', 'admin@alhemam.sa');
     await page.fill('input[type="password"]', 'admin123456');
     await page.click('button:has-text("Sign")');
     await page.waitForURL('**/dashboard', { timeout: 10000 });
 
-    // Check the cookies after login
-    const cookies = await context.cookies();
-    console.log('\n2. Cookies after login:');
-    cookies.forEach(c => console.log(`  ${c.name}: ${c.value.substring(0,20)}...`));
-
-    // Get page content
+    // Get content to parse
     const html = await page.content();
     
-    // Check if we see Guest or admin user
-    const isGuest = html.includes('>Guest<') && !html.includes('>Admin');
-    const isAdmin = html.includes('>Admin<') || html.includes('admin@alhemam');
-    const hasNav = html.includes('Administration') || html.includes('Clinical');
+    // Extract user display name - look in page for display
+    const userNameMatch = html.match(/"full_name":"([^"]+)"/);
+    const userEmailMatch = html.match(/"email":"([^"]+)"/);
+    const roleMatch = html.match(/<p class="text-neutral-400 text-sm">Role<\/p>\s*<p class="text-2xl font-bold text-white">([^<]+)<\/p>/);
+    const sectionsMatch = html.match(/<p class="text-neutral-400 text-sm">Sections<\/p>\s*<p class="text-2xl font-bold text-white">([^<]+)<\/p>/);
+    const pagesMatch = html.match(/<p class="text-neutral-400 text-sm">Pages<\/p>\s*<p class="text-2xl font-bold text-white">([^<]+)<\/p>/);
     
-    console.log('\n3. User status:');
-    console.log('  Shows Guest user:', isGuest);
-    console.log('  Shows Admin user:', isAdmin);
-    console.log('  Has navigation:', hasNav);
+    console.log('\nUser Info from Dashboard:');
+    console.log('  email:', userEmailMatch ? userEmailMatch[1] : 'not found');
+    console.log('  full_name:', userNameMatch ? userNameMatch[1] : 'not found');
+    console.log('  Role value:', roleMatch ? roleMatch[1] : 'not found');
+    console.log('  Sections count:', sectionsMatch ? sectionsMatch[1] : 'not found');
+    console.log('  Pages count:', pagesMatch ? pagesMatch[1] : 'not found');
+    
+    // Check for nav items in sidebar
+    const sidebarNav = html.match(/<nav class="flex-1[^]*?<div class="mb-1">([\s\S]*?)<\/nav>/);
+    if (sidebarNav) {
+      // Extract section labels
+      const sectionsInSidebar = sidebarNav[1].match(/<span class="flex-1 text-left text-sm">([^<]+)<\/span>/g);
+      console.log('\nSections in sidebar:');
+      if (sectionsInSidebar) {
+        sectionsInSidebar.forEach((s, i) => {
+          console.log(`  ${i+1}.`, s.replace(/<\/?span[^>]*>/g, ''));
+        });
+      } else {
+        console.log('  (none found)');
+      }
+    }
 
-    // Check the role values in HTML
-    const roleMatch = html.match(/Role.*?(\w+)/);
-    const statusMatch = html.match(/Status.*?(\w+)/);
-    const sectionsMatch = html.match(/Sections.*?(\d+)/);
-    const pagesMatch = html.match(/Pages.*?(\d+)/);
-    
-    console.log('\n4. Dashboard values:');
-    console.log('  Role:', roleMatch ? roleMatch[1] : 'not found');
-    console.log('  Status:', statusMatch ? statusMatch[1] : 'not found');
-    console.log('  Sections:', sectionsMatch ? sectionsMatch[1] : 'not found');
-    console.log('  Pages:', pagesMatch ? pagesMatch[1] : 'not found');
+    // Try finding any items in sidebar
+    const navMatches = html.match(/class="mb-1"[\s\S]*?<span class="text-sm">([^<]+)<\/span>/g);
+    console.log('\nNav items in sidebar:', navMatches ? navMatches.length : 0);
+    if (navMatches) {
+      navMatches.forEach((m, i) => console.log(`  Item ${i+1}:`, m.replace(/<[^>]*>/g, '').substring(0, 50)));
+    }
 
     console.log('\n=== Test Result ===');
-    if (isAdmin || hasNav) {
-      console.log('PASS: User logged in and nav loaded!');
+    const role = roleMatch ? roleMatch[1].trim() : '';
+    const sections = sectionsMatch ? parseInt(sectionsMatch[1]) : 0;
+    const pages = pagesMatch ? parseInt(pagesMatch[1]) : 0;
+    
+    if (role && role !== 'guest' && sections > 0) {
+      console.log('PASS: User has the right role and nav data is loaded!');
+    } else if (sections > 0 && pages > 0) {
+      console.log('PARTIAL: Some nav data loaded but role issue still present. Check role mapping.');
     } else {
-      console.log('FAIL: Still showing Guest or empty nav');
+      console.log('FAIL: No navigation data loaded. Role:', role || 'unknown');
     }
 
   } catch (error) {
