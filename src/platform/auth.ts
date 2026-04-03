@@ -18,7 +18,11 @@ export interface Session {
 export async function getSession(): Promise<Session | null> {
   const supabase = await createServerClient();
   
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  
+  if (sessionError) {
+    console.error('Session error:', sessionError);
+  }
   
   if (!session?.user) {
     return null;
