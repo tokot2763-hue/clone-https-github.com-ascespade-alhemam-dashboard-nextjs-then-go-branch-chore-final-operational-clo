@@ -12,8 +12,11 @@ export default async function DashboardLayout({
   
   try {
     session = await getSession();
+    console.log('Dashboard layout: session:', session ? 'yes' : 'no');
     if (session) {
+      console.log('Dashboard layout: user id:', session.user.id);
       navTree = await buildNavTree(session.user.id, session.user.role_code || 'guest');
+      console.log('Dashboard layout: navTree sections:', navTree.sections.length);
     }
   } catch (error) {
     console.error('Dashboard layout error:', error);
