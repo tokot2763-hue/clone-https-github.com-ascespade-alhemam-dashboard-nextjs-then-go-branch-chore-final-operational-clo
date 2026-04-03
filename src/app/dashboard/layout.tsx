@@ -1,5 +1,6 @@
 import { getSession } from '@/platform/auth';
 import Sidebar from '@/ui/layouts/Sidebar';
+import { cookies } from 'next/headers';
 
 interface NavPage {
   id: string;
@@ -22,17 +23,15 @@ interface NavTree {
   sections: NavSection[];
 }
 
-async function getNavTree(): Promise<NavTree> {
-  // Call our own API to get navigation - this works because API routes use the working pattern
+async function getNavTree(locale: string = 'ar'): Promise<NavTree> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://clone-https-github-com-ascespade-alhemam-dashboard-nextjs-6221.d.kiloapps.io';
   
   try {
-    const response = await fetch(`${baseUrl}/api/v1/nav`, {
+    const response = await fetch(`${baseUrl}/api/v1/nav?locale=${locale}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
-      // Add cache: no-store to ensure fresh data
       cache: 'no-store',
     });
     
@@ -54,8 +53,10 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = await cookies();
+  const locale = cookieStore.get('alhemam_locale')?.value || 'ar';
   const session = await getSession();
-  const navTree = session ? await getNavTree() : { sections: [] };
+  const navTree = session ? await getNavTree(locale) : { sections: [] };
 
   return (
     <div className="flex min-h-screen dark:bg-neutral-900 bg-gray-50">

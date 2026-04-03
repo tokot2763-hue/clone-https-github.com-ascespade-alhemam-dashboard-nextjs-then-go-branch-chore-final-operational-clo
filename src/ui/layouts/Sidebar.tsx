@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation';
@@ -62,11 +62,12 @@ interface SidebarProps {
   };
 }
 
-export default function Sidebar({ user, navTree }: SidebarProps) {
+export default function Sidebar({ user, navTree: initialNavTree }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [navTree, setNavTree] = useState(initialNavTree);
   
   // Get theme/locale from ThemeProvider context
   const { theme, resolvedTheme, locale, setTheme, setLocale } = useTheme();
@@ -77,6 +78,16 @@ export default function Sidebar({ user, navTree }: SidebarProps) {
   const nextTheme = toggleThemeList[(currentIndex + 1) % 3];
   const toggleTheme = () => setTheme(nextTheme);
   const toggleLocale = () => setLocale(locale === 'ar' ? 'en' : 'ar');
+
+  // Re-fetch navigation when locale changes
+  useEffect(() => {
+    fetch(`/api/v1/nav?locale=${locale}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.sections) setNavTree(data);
+      })
+      .catch(console.error);
+  }, [locale]);
 
   const getThemeIcon = () => {
     if (theme === 'system') return '🌓';

@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/platform/supabase-server';
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = createServiceClient();
+  const { searchParams } = new URL(request.url);
+  const locale = searchParams.get('locale') || 'ar';
   
   const { data: sections } = await supabase
     .from('nav_sections')
@@ -29,7 +31,7 @@ export async function GET() {
     }
     pagesBySection.get(page.section_key)!.push({
       id: page.id,
-      name: page.name,
+      name: locale === 'ar' && page.name_ar ? page.name_ar : page.name,
       path: page.route_path,
       icon: page.icon_key,
       sort_order: page.sort_order,
@@ -39,7 +41,7 @@ export async function GET() {
   const navSections = sections
     .map(section => ({
       id: section.id,
-      name: section.label,
+      name: locale === 'ar' && section.label_ar ? section.label_ar : section.label,
       code: section.section_key,
       icon: section.icon_key,
       sort_order: section.sort_order,
