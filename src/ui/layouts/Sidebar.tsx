@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation';
+import { useTheme, useTranslation } from '@/ui/providers/ThemeProvider';
 import { 
   Shield, 
   LayoutDashboard, 
@@ -66,30 +67,16 @@ export default function Sidebar({ user, navTree }: SidebarProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [mobileOpen, setMobileOpen] = useState(false);
   
-  // Theme & Locale from sessionStorage
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    if (typeof window === 'undefined') return 'dark';
-    return (sessionStorage.getItem('theme') as 'dark' | 'light') || 'dark';
-  });
-  const [locale, setLocale] = useState<'ar' | 'en'>(() => {
-    if (typeof window === 'undefined') return 'ar';
-    return (sessionStorage.getItem('locale') as 'ar' | 'en') || 'ar';
-  });
+  // Get theme/locale from ThemeProvider context
+  const { theme, locale, setTheme, setLocale } = useTheme();
+  const t = useTranslation();
 
   const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    sessionStorage.setItem('theme', newTheme);
-    document.documentElement.classList.remove('light', 'dark');
-    document.documentElement.classList.add(newTheme);
+    setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
   const toggleLocale = () => {
-    const newLocale = locale === 'ar' ? 'en' : 'ar';
-    setLocale(newLocale);
-    sessionStorage.setItem('locale', newLocale);
-    document.documentElement.dir = newLocale === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = newLocale;
+    setLocale(locale === 'ar' ? 'en' : 'ar');
   };
 
   const handleLogout = async () => {
@@ -217,7 +204,7 @@ export default function Sidebar({ user, navTree }: SidebarProps) {
               className="w-full flex items-center gap-2 px-3 py-2 text-red-400 hover:bg-neutral-700 rounded-lg transition-colors"
             >
               <LogOut className="w-4 h-4" />
-              <span className="text-sm">Sign Out</span>
+              <span className="text-sm">{t.logout}</span>
             </button>
           </div>
         </div>
