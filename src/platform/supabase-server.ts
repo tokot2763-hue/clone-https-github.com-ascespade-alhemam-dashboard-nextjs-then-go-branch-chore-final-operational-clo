@@ -1,16 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://demo.supabase.co';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'demo-key';
 
 export function createServerClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  return createClient(supabaseUrl, supabaseKey);
 }
 
 export function createServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'demo-service-key';
+  return createClient(supabaseUrl, serviceKey);
 }
