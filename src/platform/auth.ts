@@ -15,9 +15,16 @@ export interface User {
   tenant_id: string | null;
 }
 
+export interface UserPreferences {
+  user_id: string;
+  theme: 'dark' | 'light';
+  locale: 'ar' | 'en';
+}
+
 export interface Session {
   user: User;
   access_token: string;
+  preferences?: UserPreferences;
 }
 
 export const ROLE_LEVELS: Record<string, number> = {
@@ -29,6 +36,12 @@ export const ROLE_LEVELS: Record<string, number> = {
   guardian: 20,
   patient: 10,
   guest: 0,
+};
+
+export const DEFAULT_PREFERENCES: UserPreferences = {
+  user_id: '',
+  theme: 'dark',
+  locale: 'ar',
 };
 
 async function createAuthClient(): Promise<SupabaseClient> {
@@ -62,6 +75,53 @@ export function createServiceClient() {
   });
 }
 
+async function getUserPreferences(userId: string): Promise<UserPreferences> {
+  const supabase = createServiceClient();
+  
+  try {
+    const { data, error } = await supabase
+      .from('user_preferences')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error || !data) {
+      // Return defaults if no preferences found
+      return { ...DEFAULT_PREFERENCES, user_id: userId };
+    }
+    
+    return {
+      user_id: data.user_id,
+      theme: data.theme || 'dark',
+      locale: data.locale || 'ar',
+    };
+  } catch (e) {
+    console.log('getUserPreferences: using defaults', e);
+    return { ...DEFAULT_PREFERENCES, user_id: userId };
+  }
+}
+
+export async function updateUserPreferences(userId: string, updates: Partial<UserPreferences>) {
+  const supabase = createServiceClient();
+  
+  try {
+    const { error } = await supabase
+      .from('user_preferences')
+      .upsert({
+        user_id: userId,
+        theme: updates.theme || 'dark',
+        locale: updates.locale || 'ar',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+    
+    if (error) throw error;
+    return true;
+  } catch (e) {
+    console.error('updateUserPreferences error:', e);
+    return false;
+  }
+}
+
 export async function getSession(): Promise<Session | null> {
   const supabase = await createAuthClient();
   
@@ -77,7 +137,6 @@ export async function getSession(): Promise<Session | null> {
 
   const userEmail = session.user.email || '';
   
-  // Get user from iam_users table first
   const { data: iamUser } = await supabase
     .from('iam_users')
     .select('*, role:iam_roles(*)')
@@ -92,7 +151,6 @@ export async function getSession(): Promise<Session | null> {
   let full_name: string | null = null;
 
   if (iamUser?.role) {
-    // DB-driven role
     role_code = iamUser.role.role_key;
     role_name = iamUser.role.name;
     role_level = iamUser.role.role_level;
@@ -100,7 +158,6 @@ export async function getSession(): Promise<Session | null> {
     tenant_id = iamUser.tenant_id;
     full_name = iamUser.full_name;
   } else {
-    // Fallback: derive role from email prefix
     const emailPrefix = userEmail.split('@')[0];
     
     const emailRoleMap: Record<string, { code: string; name: string; level: number }> = {
@@ -125,6 +182,9 @@ export async function getSession(): Promise<Session | null> {
     full_name = session.user.user_metadata?.full_name || userEmail;
   }
 
+  // Load user preferences (with Arabic default)
+  const preferences = await getUserPreferences(session.user.id);
+
   return {
     user: {
       id: session.user.id,
@@ -137,6 +197,7 @@ export async function getSession(): Promise<Session | null> {
       tenant_id: tenant_id,
     },
     access_token: session.access_token,
+    preferences,
   };
 }
 
@@ -229,7 +290,6 @@ export async function createRole(roleKey: string, name: string, roleLevel: numbe
 export async function createUser(email: string, fullName: string, roleId?: string, tenantId?: string) {
   const supabase = createServiceClient();
   
-  // Note: This creates profile - actual user created via auth
   const { data, error } = await supabase
     .from('iam_users')
     .insert({
