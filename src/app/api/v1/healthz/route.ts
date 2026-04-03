@@ -1,31 +1,28 @@
 import { NextResponse } from 'next/server';
-import { createServerClient } from '@/platform/supabase-server';
+import { createServiceClient } from '@/platform/supabase-server';
 
 export async function GET() {
   try {
-    const supabase = await createServerClient();
+    const supabase = createServiceClient();
     
     const { count: pagesCount } = await supabase
       .from('nav_pages')
       .select('*', { count: 'exact', head: true });
     
-    const { count: rolesCount } = await supabase
-      .from('iam_roles')
+    const { count: sectionsCount } = await supabase
+      .from('nav_sections')
       .select('*', { count: 'exact', head: true });
 
     return NextResponse.json({
       status: 'ok',
       schema: 'driven',
       pages: pagesCount || 0,
-      roles: rolesCount || 0,
+      sections: sectionsCount || 0,
     });
   } catch (error) {
     return NextResponse.json({
-      status: 'ok',
-      schema: 'driven',
-      pages: 63,
-      roles: 11,
-      note: 'Demo mode - using static data',
-    });
+      status: 'error',
+      error: String(error),
+    }, { status: 500 });
   }
 }
