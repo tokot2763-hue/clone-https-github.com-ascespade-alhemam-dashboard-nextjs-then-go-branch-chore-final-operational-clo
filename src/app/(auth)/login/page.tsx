@@ -48,6 +48,7 @@ export default function LoginPage() {
   };
 
   const handleQuickLogin = async (email: string, password: string) => {
+    console.log('Quick login clicked for:', email);
     setLoading(true);
     setError('');
 
@@ -58,14 +59,18 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
+      console.log('Response status:', res.status);
       const data = await res.json();
+      console.log('Response data:', data);
 
       if (!res.ok) {
         throw new Error(data.error || 'Login failed');
       }
 
+      console.log('Login successful, redirecting...');
       router.push('/dashboard');
     } catch (err: any) {
+      console.error('Login error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
