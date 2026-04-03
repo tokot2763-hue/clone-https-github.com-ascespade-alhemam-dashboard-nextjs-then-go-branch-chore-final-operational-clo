@@ -1,9 +1,6 @@
-'use client';
-
 import { getSession } from '@/platform/auth';
 import { buildNavTree, type NavTree } from '@/platform/nav-engine';
 import Sidebar from '@/ui/layouts/Sidebar';
-import { LogOut } from 'lucide-react';
 
 export default async function DashboardLayout({
   children,
@@ -24,13 +21,18 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-neutral-900">
-      {session && (
+      {session ? (
         <Sidebar 
           user={session.user} 
           navTree={navTree} 
         />
+      ) : (
+        <Sidebar 
+          user={{ id: 'guest', email: 'guest@alhemam.sa', full_name: 'Guest', role_code: 'guest', role_name: 'Guest' }} 
+          navTree={navTree} 
+        />
       )}
-      <main className={`flex-1 ${session ? 'ml-64' : ''} p-8`}>
+      <main className="flex-1 ml-64 p-8">
         {children}
       </main>
     </div>
