@@ -12,9 +12,6 @@ export default defineConfig({
     baseURL: 'https://clone-https-github-com-ascespade-alhemam-dashboard-nextjs-6221.d.kiloapps.io',
     trace: 'on-first-retry',
   },
-  reporter: 'list',
-  stdout: 'pipe',
-  stderr: 'pipe',
   projects: [
     {
       name: 'chromium',
