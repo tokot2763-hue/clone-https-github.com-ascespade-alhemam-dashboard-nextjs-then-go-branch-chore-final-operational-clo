@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { cookies, headers } from 'next/headers';
+import { cookies } from 'next/headers';
 
 const supabaseUrl = 'https://xjcxsdoblqckxafvzqsa.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqY3hzZG9ibHFja3hhZnZ6cXNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNzEyNzQsImV4cCI6MjA5MDc0NzI3NH0.1QiRSM16AcEmAFwKyqIbXZvhCtev7iUbsBDXZ9PB3Rc';
@@ -11,6 +11,7 @@ export interface User {
   role_id: string | null;
   role_code: string | null;
   role_name: string | null;
+  role_level: number;
   tenant_id: string | null;
 }
 
@@ -18,6 +19,17 @@ export interface Session {
   user: User;
   access_token: string;
 }
+
+export const ROLE_LEVELS: Record<string, number> = {
+  admin: 100,
+  super_doctor: 60,
+  doctor: 50,
+  nurse: 40,
+  receptionist: 30,
+  guardian: 20,
+  patient: 10,
+  guest: 0,
+};
 
 async function createAuthClient(): Promise<SupabaseClient> {
   const cookieStore = await cookies();
@@ -43,6 +55,13 @@ async function createAuthClient(): Promise<SupabaseClient> {
   return client;
 }
 
+export function createServiceClient() {
+  const serviceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqY3hzZG9ibHFja3hhZnZ6cXNhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTE3MTI3NCwiZXhwIjoyMDkwNzQ3Mjc0fQ.gzHKDlEZdITkEHoAoJflTl8MmFODGuRLMuZUqWgB5eA';
+  return createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false }
+  });
+}
+
 export async function getSession(): Promise<Session | null> {
   const supabase = await createAuthClient();
   
@@ -53,93 +72,87 @@ export async function getSession(): Promise<Session | null> {
   }
   
   if (!session?.user) {
-    console.log('getSession: No session found - returning null');
     return null;
   }
 
-  console.log('getSession: Found user:', session.user.email || 'unknown');
+  const userEmail = session.user.email || '';
   
-  let role_code = 'admin';
-  let role_name = 'Admin';
-  let role_id = null;
-  let userData = null;
-
-  // Check if user exists in iam_users table
+  // Get user from iam_users table first
   const { data: iamUser } = await supabase
     .from('iam_users')
-    .select(`
-      id,
-      email,
-      full_name,
-      role_id,
-      tenant_id
-    `)
+    .select('*, role:iam_roles(*)')
     .eq('id', session.user.id)
     .single();
 
-  // If no role mapping, use email to determine role from users table
-  if (iamUser) {
-    userData = iamUser;
-    // role_id field doesn't exist in DB - derive role from user mapping
+  let role_code = 'guest';
+  let role_name = 'Guest';
+  let role_level = 0;
+  let role_id: string | null = null;
+  let tenant_id: string | null = null;
+  let full_name: string | null = null;
+
+  if (iamUser?.role) {
+    // DB-driven role
+    role_code = iamUser.role.role_key;
+    role_name = iamUser.role.name;
+    role_level = iamUser.role.role_level;
+    role_id = iamUser.role_id;
+    tenant_id = iamUser.tenant_id;
+    full_name = iamUser.full_name;
   } else {
-    // Check by email prefix
-    const userEmail = session.user.email || '';
+    // Fallback: derive role from email prefix
     const emailPrefix = userEmail.split('@')[0];
-    if (emailPrefix === 'admin' || emailPrefix === 'system_manager') {
-      role_code = 'admin';
-      role_name = 'System Admin';
-    } else if (emailPrefix === 'medical_supervisor' || emailPrefix === 'supervisor') {
-      role_code = 'super_doctor';
-      role_name = 'Super Doctor';
-    } else if (emailPrefix === 'doctor') {
-      role_code = 'doctor';
-      role_name = 'Doctor';
-    } else if (emailPrefix === 'nurse') {
-      role_code = 'nurse';
-      role_name = 'Nurse';
-    } else if (emailPrefix === 'receptionist') {
-      role_code = 'receptionist';
-      role_name = 'Receptionist';
-    } else if (emailPrefix === 'insurance') {
-      role_code = 'accountant';
-      role_name = 'Accountant';
-    } else if (emailPrefix === 'patient') {
-      role_code = 'patient';
-      role_name = 'Patient';
-    } else if (emailPrefix === 'parent' || emailPrefix === 'guardian') {
-      role_code = 'guardian';
-      role_name = 'Guardian';
-    }
-    // User not in iam_users - check if they exist in auth.users
-    // Use default admin role for authenticated users
-    userData = {
-      id: session.user.id,
-      email: session.user.email,
-      full_name: session.user.user_metadata?.full_name || session.user.email,
-      role_id: null,
-      tenant_id: null
+    
+    const emailRoleMap: Record<string, { code: string; name: string; level: number }> = {
+      admin: { code: 'admin', name: 'System Admin', level: 100 },
+      system_manager: { code: 'admin', name: 'System Admin', level: 100 },
+      medical_supervisor: { code: 'super_doctor', name: 'Super Doctor', level: 60 },
+      supervisor: { code: 'super_doctor', name: 'Super Doctor', level: 60 },
+      doctor: { code: 'doctor', name: 'Doctor', level: 50 },
+      nurse: { code: 'nurse', name: 'Nurse', level: 40 },
+      receptionist: { code: 'receptionist', name: 'Receptionist', level: 30 },
+      insurance: { code: 'accountant', name: 'Accountant', level: 35 },
+      patient: { code: 'patient', name: 'Patient', level: 10 },
+      guardian: { code: 'guardian', name: 'Guardian', level: 20 },
+      parent: { code: 'guardian', name: 'Guardian', level: 20 },
     };
+
+    const emailRole = emailRoleMap[emailPrefix] || { code: 'patient', name: 'Patient', level: 10 };
+    role_code = emailRole.code;
+    role_name = emailRole.name;
+    role_level = emailRole.level;
+    
+    full_name = session.user.user_metadata?.full_name || userEmail;
   }
 
   return {
     user: {
-      id: userData.id,
-      email: userData.email,
-      full_name: userData.full_name,
+      id: session.user.id,
+      email: userEmail,
+      full_name: full_name,
       role_id: role_id,
       role_code: role_code,
       role_name: role_name,
-      tenant_id: userData.tenant_id,
+      role_level: role_level,
+      tenant_id: tenant_id,
     },
     access_token: session.access_token,
   };
 }
 
-export async function requireAuth() {
+export function canAccessPage(userRoleLevel: number, requiredRoleLevel: number): boolean {
+  return userRoleLevel >= requiredRoleLevel;
+}
+
+export async function requireAuth(minRoleLevel: number = 0) {
   const session = await getSession();
   
   if (!session) {
     throw new Error('Unauthorized');
+  }
+  
+  if (session.user.role_level < minRoleLevel) {
+    throw new Error('Forbidden');
   }
   
   return session;
@@ -165,31 +178,69 @@ export async function signOut() {
   await supabase.auth.signOut();
 }
 
-function createServiceClient() {
-  const serviceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqY3hzZG9ibHFja3hhZnZ6cXNhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTE3MTI3NCwiZXhwIjoyMDkwNzQ3Mjc0fQ.gzHKDlEZdITkEHoAoJflTl8MmFODGuRLMuZUqWgB5eA';
-  return createClient(supabaseUrl, serviceKey, {
-    auth: {
-      persistSession: false,
-    }
-  });
-}
-
-export async function getUserRole(userId: string) {
+export async function getUsers() {
   const supabase = createServiceClient();
   
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('iam_users')
-    .select('role_id')
-    .eq('id', userId)
-    .single();
+    .select('*, role:iam_roles(*)')
+    .order('created_at', { ascending: false });
 
-  if (!data?.role_id) return null;
+  if (error) throw error;
+  return data;
+}
 
-  const { data: role } = await supabase
+export async function getRoles() {
+  const supabase = createServiceClient();
+  
+  const { data, error } = await supabase
     .from('iam_roles')
-    .select('code, name, priority')
-    .eq('id', data.role_id)
+    .select('*')
+    .order('role_level', { ascending: false });
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateUserRole(userId: string, roleId: string | null) {
+  const supabase = createServiceClient();
+  
+  const { error } = await supabase
+    .from('iam_users')
+    .update({ role_id: roleId })
+    .eq('id', userId);
+
+  if (error) throw error;
+}
+
+export async function createRole(roleKey: string, name: string, roleLevel: number) {
+  const supabase = createServiceClient();
+  
+  const { data, error } = await supabase
+    .from('iam_roles')
+    .insert({ role_key: roleKey, name, role_level: roleLevel })
+    .select()
     .single();
 
-  return role;
+  if (error) throw error;
+  return data;
+}
+
+export async function createUser(email: string, fullName: string, roleId?: string, tenantId?: string) {
+  const supabase = createServiceClient();
+  
+  // Note: This creates profile - actual user created via auth
+  const { data, error } = await supabase
+    .from('iam_users')
+    .insert({
+      email,
+      full_name: fullName,
+      role_id: roleId,
+      tenant_id: tenantId || '00000000-0000-0000-0000-000000000001',
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 }
