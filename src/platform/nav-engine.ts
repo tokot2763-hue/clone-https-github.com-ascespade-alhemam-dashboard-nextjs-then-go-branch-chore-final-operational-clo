@@ -24,28 +24,30 @@ export interface NavTree {
 export async function buildNavTree(userId: string, roleCode: string): Promise<NavTree> {
   const supabase = createServiceClient();
 
-  const { data: sections } = await supabase
+  const { data: allSections, error: sectionsError } = await supabase
     .from('nav_sections')
     .select('id, section_key, label, icon_key, sort_order')
-    .eq('is_active', true)
     .order('sort_order');
 
-  if (!sections) {
+  console.log('nav-engine: sections query:', { count: allSections?.length, error: sectionsError });
+
+  if (!allSections || allSections.length === 0) {
     return { sections: [] };
   }
 
-  const sectionKeys = sections.map(s => s.section_key);
-  
-  const { data: allPages } = await supabase
+  const { data: pages, error: pagesError } = await supabase
     .from('nav_pages')
-    .select('id, page_key, route_path, name, section_key, icon_key, sort_order, is_sidebar, is_active')
-    .in('section_key', sectionKeys)
-    .eq('is_active', true)
-    .eq('is_sidebar', true);
+    .select('id, page_key, route_path, name, section_key, icon_key, sort_order');
+
+  console.log('nav-engine: pages query:', { count: pages?.length, error: pagesError });
+
+  if (!pages || pages.length === 0) {
+    return { sections: [] };
+  }
 
   const pagesBySection = new Map<string, NavPage[]>();
   
-  allPages?.forEach(page => {
+  pages.forEach(page => {
     if (!pagesBySection.has(page.section_key)) {
       pagesBySection.set(page.section_key, []);
     }
@@ -58,7 +60,7 @@ export async function buildNavTree(userId: string, roleCode: string): Promise<Na
     });
   });
 
-  const navSections: NavSection[] = sections
+  const navSections: NavSection[] = allSections
     .map(section => ({
       id: section.id,
       name: section.label,
@@ -70,6 +72,7 @@ export async function buildNavTree(userId: string, roleCode: string): Promise<Na
     }))
     .filter(s => s.pages.length > 0);
 
+  console.log('nav-engine: returning sections:', navSections.length);
   return { sections: navSections };
 }
 
