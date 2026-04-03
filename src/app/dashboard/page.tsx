@@ -50,7 +50,7 @@ export default async function DashboardPage() {
               </div>
               <div>
                 <p className="text-neutral-400 text-sm">Sections</p>
-                <p className="text-2xl font-bold text-white">{navTree.sections.length || 6}</p>
+                <p className="text-2xl font-bold text-white">{navTree.sections.length}</p>
               </div>
             </div>
           </div>
@@ -62,7 +62,7 @@ export default async function DashboardPage() {
               </div>
               <div>
                 <p className="text-neutral-400 text-sm">Pages</p>
-                <p className="text-2xl font-bold text-white">{totalPages || 63}</p>
+                <p className="text-2xl font-bold text-white">{totalPages}</p>
               </div>
             </div>
           </div>
@@ -132,22 +132,7 @@ export default async function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-medium text-emerald-400 mb-2">Dashboard</h3>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-2 py-1 bg-neutral-700 rounded text-sm text-neutral-300">Main Dashboard</span>
-                    <span className="px-2 py-1 bg-neutral-700 rounded text-sm text-neutral-300">Statistics</span>
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-emerald-400 mb-2">Patients</h3>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-2 py-1 bg-neutral-700 rounded text-sm text-neutral-300">Patient List</span>
-                    <span className="px-2 py-1 bg-neutral-700 rounded text-sm text-neutral-300">Add Patient</span>
-                  </div>
-                </div>
-              </div>
+              <p className="text-yellow-400">No navigation data. Run database migration.</p>
             )}
           </div>
         </div>
