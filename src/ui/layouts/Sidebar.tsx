@@ -4,7 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation';
-import { useTheme, useTranslation } from '@/ui/providers/ThemeProvider';
+import { useTheme } from '@/ui/providers/ThemeProvider';
+import { useTranslation } from '@/i18n';
 import { 
   Shield, 
   LayoutDashboard, 
@@ -69,7 +70,7 @@ export default function Sidebar({ user, navTree }: SidebarProps) {
   
   // Get theme/locale from ThemeProvider context
   const { theme, locale, setTheme, setLocale } = useTheme();
-  const t = useTranslation();
+  const { t } = useTranslation();
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -204,7 +205,7 @@ export default function Sidebar({ user, navTree }: SidebarProps) {
               className="w-full flex items-center gap-2 px-3 py-2 text-red-400 hover:bg-neutral-700 rounded-lg transition-colors"
             >
               <LogOut className="w-4 h-4" />
-              <span className="text-sm">{t.logout}</span>
+              <span className="text-sm">{t('auth.logout')}</span>
             </button>
           </div>
         </div>

@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Shield, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useTranslation } from '@/i18n';
+import { useTheme } from '@/ui/providers/ThemeProvider';
 
 const DEMO_ACCOUNTS = [
   { email: 'admin@alhemam.sa', password: 'admin123456', role: 'Admin' },
