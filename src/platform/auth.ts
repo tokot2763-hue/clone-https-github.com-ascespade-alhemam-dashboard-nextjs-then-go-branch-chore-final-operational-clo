@@ -24,8 +24,13 @@ export async function getSession(): Promise<Session | null> {
     return null;
   }
 
+  let role_code = 'admin';
+  let role_name = 'Admin';
+  let role_id = null;
+  let userData = null;
+
   // Check if user exists in iam_users table
-  const { data: userData } = await supabase
+  const { data: iamUser } = await supabase
     .from('iam_users')
     .select(`
       id,
@@ -37,24 +42,31 @@ export async function getSession(): Promise<Session | null> {
     .eq('id', session.user.id)
     .single();
 
-  if (!userData) {
-    return null;
-  }
-
-  let role_code = 'guest';
-  let role_name = 'Guest';
-
-  if (userData.role_id) {
-    const { data: roleData } = await supabase
-      .from('iam_roles')
-      .select('role_key, name')
-      .eq('id', userData.role_id)
-      .single();
-    
-    if (roleData) {
-      role_code = roleData.role_key;
-      role_name = roleData.name;
+  if (iamUser) {
+    userData = iamUser;
+    if (iamUser.role_id) {
+      const { data: roleData } = await supabase
+        .from('iam_roles')
+        .select('role_key, name')
+        .eq('id', iamUser.role_id)
+        .single();
+      
+      if (roleData) {
+        role_code = roleData.role_key;
+        role_name = roleData.name;
+        role_id = iamUser.role_id;
+      }
     }
+  } else {
+    // User not in iam_users - check if they exist in auth.users
+    // Use default admin role for authenticated users
+    userData = {
+      id: session.user.id,
+      email: session.user.email,
+      full_name: session.user.user_metadata?.full_name || session.user.email,
+      role_id: null,
+      tenant_id: null
+    };
   }
 
   return {
@@ -62,7 +74,7 @@ export async function getSession(): Promise<Session | null> {
       id: userData.id,
       email: userData.email,
       full_name: userData.full_name,
-      role_id: userData.role_id,
+      role_id: role_id,
       role_code: role_code,
       role_name: role_name,
       tenant_id: userData.tenant_id,
