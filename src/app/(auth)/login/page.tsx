@@ -39,7 +39,7 @@ export default function LoginPage() {
         throw new Error(data.error || 'Login failed');
       }
 
-      router.push('/dashboard');
+      window.location.href = '/dashboard';
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -68,7 +68,7 @@ export default function LoginPage() {
       }
 
       console.log('Login successful, redirecting...');
-      router.push('/dashboard');
+      window.location.href = '/dashboard';
     } catch (err: any) {
       console.error('Login error:', err);
       setError(err.message);
