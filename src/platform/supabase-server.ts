@@ -1,6 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { cookies, headers } from 'next/headers';
-import { requestApi } from 'next/dist/server/api-utils';
 
 const supabaseUrl = 'https://xjcxsdoblqckxafvzqsa.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqY3hzZG9ibHFja3hhZnZ6cXNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNzEyNzQsImV4cCI6MjA5MDc0NzI3NH0.1QiRSM16AcEmAFwKyqIbXZvhCtev7iUbsBDXZ9PB3Rc';

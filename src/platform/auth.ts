@@ -1,4 +1,8 @@
-import { createServerClient } from './supabase-server';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { cookies, headers } from 'next/headers';
+
+const supabaseUrl = 'https://xjcxsdoblqckxafvzqsa.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqY3hzZG9ibHFja3hhZnZ6cXNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNzEyNzQsImV4cCI6MjA5MDc0NzI3NH0.1QiRSM16AcEmAFwKyqIbXZvhCtev7iUbsBDXZ9PB3Rc';
 
 export interface User {
   id: string;
@@ -15,8 +19,32 @@ export interface Session {
   access_token: string;
 }
 
+async function createAuthClient(): Promise<SupabaseClient> {
+  const cookieStore = await cookies();
+  
+  const accessToken = cookieStore.get('sb-access-token')?.value;
+  const refreshToken = cookieStore.get('sb-refresh-token')?.value;
+  
+  const client = createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
+  
+  if (accessToken) {
+    await client.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken || '',
+    });
+  }
+  
+  return client;
+}
+
 export async function getSession(): Promise<Session | null> {
-  const supabase = await createServerClient();
+  const supabase = await createAuthClient();
   
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
   
@@ -29,7 +57,7 @@ export async function getSession(): Promise<Session | null> {
     return null;
   }
 
-  console.log('getSession: Found user:', session.user.email);
+  console.log('getSession: Found user:', session.user.email || 'unknown');
   
   let role_code = 'admin';
   let role_name = 'Admin';
@@ -55,7 +83,8 @@ export async function getSession(): Promise<Session | null> {
     // role_id field doesn't exist in DB - derive role from user mapping
   } else {
     // Check by email prefix
-    const emailPrefix = session.user.email.split('@')[0];
+    const userEmail = session.user.email || '';
+    const emailPrefix = userEmail.split('@')[0];
     if (emailPrefix === 'admin' || emailPrefix === 'system_manager') {
       role_code = 'admin';
       role_name = 'System Admin';
@@ -117,7 +146,7 @@ export async function requireAuth() {
 }
 
 export async function signIn(email: string, password: string) {
-  const supabase = await createServerClient();
+  const supabase = await createAuthClient();
   
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -132,12 +161,21 @@ export async function signIn(email: string, password: string) {
 }
 
 export async function signOut() {
-  const supabase = await createServerClient();
+  const supabase = await createAuthClient();
   await supabase.auth.signOut();
 }
 
+function createServiceClient() {
+  const serviceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqY3hzZG9ibHFja3hhZnZ6cXNhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTE3MTI3NCwiZXhwIjoyMDkwNzQ3Mjc0fQ.gzHKDlEZdITkEHoAoJflTl8MmFODGuRLMuZUqWgB5eA';
+  return createClient(supabaseUrl, serviceKey, {
+    auth: {
+      persistSession: false,
+    }
+  });
+}
+
 export async function getUserRole(userId: string) {
-  const supabase = await createServerClient();
+  const supabase = createServiceClient();
   
   const { data } = await supabase
     .from('iam_users')
