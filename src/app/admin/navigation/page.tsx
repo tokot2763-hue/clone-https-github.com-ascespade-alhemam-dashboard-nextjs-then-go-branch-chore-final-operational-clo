@@ -25,33 +25,35 @@ interface NavSection {
 export default function AdminNavigationPage() {
   const [sections, setSections] = useState<NavSection[]>([]);
   const [pages, setPages] = useState<NavPage[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [expandedSection, setExpandedSection] = useState<string | null>('admin');
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (initialized) return;
+    setInitialized(true);
+    
+    fetch('/api/v1/nav')
+      .then(res => res.json())
+      .then(data => {
+        setSections(data.sections || []);
+        fetch('https://xjcxsdoblqckxafvzqsa.supabase.co/rest/v1/nav_pages?select=*', {
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqY3hzZG9ibHFja3hhZnZ6cXNhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTE3MTI3NCwiZXhwIjoyMDkwNzQ3Mjc0fQ.gzHKDlEZdITkEHoAoJflTl8MmFODGuRLMuZUqWgB5eA',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqY3hzZG9ibHFja3hhZnZ6cXNhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTE3MTI3NCwiZXhwIjoyMDkwNzQ3Mjc0fQ.gzHKDlEZdITkEHoAoJflTl8MmFODGuRLMuZUqWgB5eA'
+          }
+        })
+          .then(res => res.json())
+          .then(pagesData => {
+            setPages(pagesData || []);
+            setIsLoading(false);
+          })
+          .catch(() => setIsLoading(false));
+      })
+      .catch(() => setIsLoading(false));
+  }, [initialized]);
 
-  async function loadData() {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/v1/nav');
-      const data = await res.json();
-      setSections(data.sections || []);
-      // Get pages separately
-      const pagesRes = await fetch('https://xjcxsdoblqckxafvzqsa.supabase.co/rest/v1/nav_pages?select=*', {
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqY3hzZG9ibHFja3hhZnZ6cXNhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTE3MTI3NCwiZXhwIjoyMDkwNzQ3Mjc0fQ.gzHKDlEZdITkEHoAoJflTl8MmFODGuRLMuZUqWgB5eA',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqY3hzZG9ibHFja3hhZnZ6cXNhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTE3MTI3NCwiZXhwIjoyMDkwNzQ3Mjc0fQ.gzHKDlEZdITkEHoAoJflTl8MmFODGuRLMuZUqWgB5eA'
-        }
-      });
-      const pagesData = await pagesRes.json();
-      setPages(pagesData || []);
-    } catch (e) {
-      console.error(e);
-    }
-    setLoading(false);
-  }
+  const loading = isLoading;
 
   const getPagesForSection = (sectionKey: string) => 
     pages.filter(p => p.section_key === sectionKey);

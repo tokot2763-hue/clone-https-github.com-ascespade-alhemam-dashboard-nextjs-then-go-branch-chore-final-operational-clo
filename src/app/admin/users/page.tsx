@@ -28,25 +28,37 @@ interface Role {
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (initialized) return;
+    setInitialized(true);
+    
+    fetch('/api/v1/admin/users')
+      .then(res => res.json())
+      .then(data => {
+        if (data.users) setUsers(data.users);
+        if (data.roles) setRoles(data.roles);
+        setIsLoading(false);
+      })
+      .catch(() => setIsLoading(false));
+  }, [initialized]);
 
-  async function loadData() {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/v1/admin/users');
-      const data = await res.json();
-      if (data.users) setUsers(data.users);
-      if (data.roles) setRoles(data.roles);
-    } catch (e) {
-      console.error(e);
-    }
-    setLoading(false);
+  const loading = isLoading;
+
+  function reloadData() {
+    setIsLoading(true);
+    fetch('/api/v1/admin/users')
+      .then(res => res.json())
+      .then(data => {
+        if (data.users) setUsers(data.users);
+        if (data.roles) setRoles(data.roles);
+        setIsLoading(false);
+      })
+      .catch(() => setIsLoading(false));
   }
 
   async function updateRole(userId: string, roleId: string | null) {
@@ -57,7 +69,7 @@ export default function AdminUsersPage() {
         body: JSON.stringify({ action: 'updateRole', userId, roleId }),
       });
       setEditingUser(null);
-      loadData();
+      reloadData();
     } catch (e) {
       console.error(e);
     }

@@ -32,23 +32,17 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children, initialTheme = 'dark', initialLocale = 'ar' }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>(initialTheme);
-  const [locale, setLocaleState] = useState<Locale>(initialLocale);
-  const [isLoading, setIsLoading] = useState(true);
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === 'undefined') return initialTheme;
+    return (sessionStorage.getItem('theme') as Theme) || initialTheme;
+  });
+  const [locale, setLocaleState] = useState<Locale>(() => {
+    if (typeof window === 'undefined') return initialLocale;
+    return (sessionStorage.getItem('locale') as Locale) || initialLocale;
+  });
+  const isLoading = false;
 
   useEffect(() => {
-    // Load preferences from sessionStorage for guest users
-    const savedTheme = sessionStorage.getItem('theme') as Theme;
-    const savedLocale = sessionStorage.getItem('locale') as Locale;
-    
-    if (savedTheme) setThemeState(savedTheme);
-    if (savedLocale) setLocaleState(savedLocale);
-    
-    setIsLoading(false);
-  }, []);
-
-  useEffect(() => {
-    // Apply theme to document
     document.documentElement.classList.remove('light', 'dark');
     document.documentElement.classList.add(theme);
     document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr';
