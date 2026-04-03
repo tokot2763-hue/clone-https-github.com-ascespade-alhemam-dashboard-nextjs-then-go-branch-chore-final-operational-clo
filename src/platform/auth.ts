@@ -47,12 +47,12 @@ export async function getSession(): Promise<Session | null> {
     if (iamUser.role_id) {
       const { data: roleData } = await supabase
         .from('iam_roles')
-        .select('role_key, name')
+        .select('code, name')
         .eq('id', iamUser.role_id)
         .single();
       
       if (roleData) {
-        role_code = roleData.role_key;
+        role_code = roleData.code;
         role_name = roleData.name;
         role_id = iamUser.role_id;
       }
@@ -126,7 +126,7 @@ export async function getUserRole(userId: string) {
 
   const { data: role } = await supabase
     .from('iam_roles')
-    .select('role_key, name, role_level')
+    .select('code, name, priority')
     .eq('id', data.role_id)
     .single();
 
