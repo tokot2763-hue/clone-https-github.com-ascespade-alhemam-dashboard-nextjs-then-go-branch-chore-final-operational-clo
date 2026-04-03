@@ -1,5 +1,4 @@
 import { createServerClient } from './supabase-server';
-import { cookies } from 'next/headers';
 
 export interface User {
   id: string;
@@ -25,6 +24,7 @@ export async function getSession(): Promise<Session | null> {
     return null;
   }
 
+  // Check if user exists in iam_users table
   const { data: userData } = await supabase
     .from('iam_users')
     .select(`
@@ -32,10 +32,6 @@ export async function getSession(): Promise<Session | null> {
       email,
       full_name,
       role_id,
-      iam_roles:iam_roles (
-        code,
-        name
-      ),
       tenant_id
     `)
     .eq('id', session.user.id)
@@ -45,9 +41,21 @@ export async function getSession(): Promise<Session | null> {
     return null;
   }
 
-  const roleData = Array.isArray(userData.iam_roles) 
-    ? userData.iam_roles[0] 
-    : userData.iam_roles;
+  let role_code = 'guest';
+  let role_name = 'Guest';
+
+  if (userData.role_id) {
+    const { data: roleData } = await supabase
+      .from('iam_roles')
+      .select('role_key, name')
+      .eq('id', userData.role_id)
+      .single();
+    
+    if (roleData) {
+      role_code = roleData.role_key;
+      role_name = roleData.name;
+    }
+  }
 
   return {
     user: {
@@ -55,8 +63,8 @@ export async function getSession(): Promise<Session | null> {
       email: userData.email,
       full_name: userData.full_name,
       role_id: userData.role_id,
-      role_code: roleData?.code || null,
-      role_name: roleData?.name || null,
+      role_code: role_code,
+      role_name: role_name,
       tenant_id: userData.tenant_id,
     },
     access_token: session.access_token,
@@ -98,16 +106,17 @@ export async function getUserRole(userId: string) {
   
   const { data } = await supabase
     .from('iam_users')
-    .select(`
-      role_id,
-      iam_roles (
-        code,
-        name,
-        priority
-      )
-    `)
+    .select('role_id')
     .eq('id', userId)
     .single();
 
-  return data?.iam_roles || null;
+  if (!data?.role_id) return null;
+
+  const { data: role } = await supabase
+    .from('iam_roles')
+    .select('role_key, name, role_level')
+    .eq('id', data.role_id)
+    .single();
+
+  return role;
 }

@@ -1,22 +1,39 @@
 import { getSession } from '@/platform/auth';
 import { buildNavTree } from '@/platform/nav-engine';
-import { Shield, Users, Activity, Database, Lock } from 'lucide-react';
+import { redirect } from 'next/navigation';
+import { Shield, Users, Activity, Database, Lock, LayoutDashboard } from 'lucide-react';
 
 export default async function DashboardPage() {
-  const session = await getSession();
+  let session;
   
+  try {
+    session = await getSession();
+  } catch (error) {
+    console.error('Session error:', error);
+    return (
+      <div className="p-8">
+        <div className="bg-red-500/20 border border-red-500 rounded-lg p-4 text-red-400">
+          <h2 className="font-bold mb-2">Authentication Error</h2>
+          <p>Unable to verify your session. Please login again.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!session) {
-    return null;
+    redirect('/login');
   }
 
   let navTree;
+  let totalPages = 0;
+  
   try {
     navTree = await buildNavTree(session.user.id, session.user.role_code || 'guest');
-  } catch (e) {
+    totalPages = navTree?.sections?.reduce((acc, s) => acc + s.pages.length, 0) || 0;
+  } catch (error) {
+    console.error('Nav tree error:', error);
     navTree = { sections: [] };
   }
-
-  const totalPages = navTree.sections.reduce((acc, s) => acc + s.pages.length, 0);
 
   return (
     <div className="space-y-8">
@@ -29,7 +46,7 @@ export default async function DashboardPage() {
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-lg">
           <Shield className="w-5 h-5 text-emerald-400" />
-          <span className="text-emerald-400 font-medium">{session.user.role_name}</span>
+          <span className="text-emerald-400 font-medium">{session.user.role_name || session.user.role_code}</span>
         </div>
       </div>
 
@@ -77,7 +94,7 @@ export default async function DashboardPage() {
             </div>
             <div>
               <p className="text-neutral-400 text-sm">Status</p>
-              <p className="text-2xl font-bold text-emerald-400">Active</p>
+              <p className="text-2xl font-bold text-emerald-400">Connected</p>
             </div>
           </div>
         </div>
@@ -92,19 +109,15 @@ export default async function DashboardPage() {
           <div className="space-y-3">
             <div className="flex items-center gap-3 text-neutral-300">
               <Database className="w-5 h-5 text-emerald-400" />
-              <span>6 Navigation Sections</span>
+              <span>Navigation Sections from DB</span>
             </div>
             <div className="flex items-center gap-3 text-neutral-300">
               <Users className="w-5 h-5 text-emerald-400" />
-              <span>11 Roles (Admin, Doctor, Nurse, etc.)</span>
+              <span>Roles from Database</span>
             </div>
             <div className="flex items-center gap-3 text-neutral-300">
               <Lock className="w-5 h-5 text-emerald-400" />
-              <span>14 Permission Scopes</span>
-            </div>
-            <div className="flex items-center gap-3 text-neutral-300">
-              <Activity className="w-5 h-5 text-emerald-400" />
-              <span>63 Dynamic Pages</span>
+              <span>Permissions from Database</span>
             </div>
           </div>
         </div>
@@ -130,21 +143,10 @@ export default async function DashboardPage() {
               ))}
             </div>
           ) : (
-            <p className="text-neutral-400">Loading navigation from database...</p>
+            <p className="text-yellow-400">No navigation data found. Please run database migration.</p>
           )}
         </div>
       </div>
     </div>
-  );
-}
-
-function LayoutDashboard({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <rect x="3" y="3" width="7" height="9" rx="1" />
-      <rect x="14" y="3" width="7" height="5" rx="1" />
-      <rect x="14" y="12" width="7" height="9" rx="1" />
-      <rect x="3" y="16" width="7" height="5" rx="1" />
-    </svg>
   );
 }

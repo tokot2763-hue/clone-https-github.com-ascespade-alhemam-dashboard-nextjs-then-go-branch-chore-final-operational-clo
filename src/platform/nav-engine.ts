@@ -24,13 +24,14 @@ export interface NavTree {
 export async function buildNavTree(userId: string, roleCode: string): Promise<NavTree> {
   const supabase = createServerClient();
 
+  // nav_sections: section_key, label, icon_key
   const { data: sections } = await supabase
     .from('nav_sections')
     .select(`
       id,
-      name,
-      code,
-      icon,
+      section_key,
+      label,
+      icon_key,
       sort_order
     `)
     .eq('is_active', true)
@@ -40,57 +41,43 @@ export async function buildNavTree(userId: string, roleCode: string): Promise<Na
     return { sections: [] };
   }
 
-  const { data: pageRoles } = await supabase
-    .from('nav_page_roles')
+  // nav_pages: page_key, route_path, name, section_key, icon_key
+  const { data: allPages } = await supabase
+    .from('nav_pages')
     .select(`
-      can_view,
-      nav_pages (
-        id,
-        name,
-        path,
-        icon,
-        sort_order,
-        section_id
-      )
+      id,
+      page_key,
+      route_path,
+      name,
+      section_key,
+      icon_key,
+      sort_order
     `)
-    .eq('can_view', true);
+    .eq('is_active', true);
 
-  const { data: role } = await supabase
-    .from('iam_roles')
-    .select('id')
-    .eq('code', roleCode)
-    .single();
-
-  const allowedPageIds = new Set(
-    pageRoles
-      ?.filter(pr => pr.nav_pages)
-      .map(pr => (pr.nav_pages as any).id)
-  );
-
+  // Map pages by section_key
   const pagesBySection = new Map<string, NavPage[]>();
   
-  pageRoles?.forEach(pr => {
-    if (!pr.nav_pages) return;
-    const page = pr.nav_pages as any;
-    if (!pagesBySection.has(page.section_id)) {
-      pagesBySection.set(page.section_id, []);
+  allPages?.forEach(page => {
+    if (!pagesBySection.has(page.section_key)) {
+      pagesBySection.set(page.section_key, []);
     }
-    pagesBySection.get(page.section_id)!.push({
+    pagesBySection.get(page.section_key)!.push({
       id: page.id,
       name: page.name,
-      path: page.path,
-      icon: page.icon,
+      path: page.route_path,
+      icon: page.icon_key,
       sort_order: page.sort_order,
     });
   });
 
   const navSections: NavSection[] = sections.map(section => ({
     id: section.id,
-    name: section.name,
-    code: section.code,
-    icon: section.icon,
+    name: section.label,
+    code: section.section_key,
+    icon: section.icon_key,
     sort_order: section.sort_order,
-    pages: (pagesBySection.get(section.id) || [])
+    pages: (pagesBySection.get(section.section_key) || [])
       .sort((a, b) => a.sort_order - b.sort_order)
   })).filter(s => s.pages.length > 0);
 
