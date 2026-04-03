@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation';
 import { 
   Shield, 
@@ -15,7 +17,6 @@ import {
   X,
   ChevronDown
 } from 'lucide-react';
-import { useState } from 'react';
 
 interface User {
   id: string;
@@ -51,15 +52,26 @@ const ICONS: Record<string, any> = {
 
 interface SidebarProps {
   user: User;
-  navTree?: {
+  navTree: {
     sections: NavSection[];
   };
 }
 
 export default function Sidebar({ user, navTree }: SidebarProps) {
+  const router = useRouter();
   const pathname = usePathname();
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/v1/auth/signout', { method: 'POST' });
+      router.push('/login');
+      router.refresh();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => {
@@ -73,41 +85,7 @@ export default function Sidebar({ user, navTree }: SidebarProps) {
     });
   };
 
-  const defaultNav = {
-    sections: [
-      {
-        id: '1',
-        name: 'Dashboard',
-        code: 'dashboard',
-        icon: 'LayoutDashboard',
-        pages: [
-          { id: '1', name: 'Main Dashboard', path: '/dashboard', icon: 'LayoutDashboard' },
-        ],
-      },
-      {
-        id: '2',
-        name: 'Patients',
-        code: 'patients',
-        icon: 'Users',
-        pages: [
-          { id: '2', name: 'Patient List', path: '/patients', icon: 'Users' },
-          { id: '3', name: 'Add Patient', path: '/patients/add', icon: 'Users' },
-        ],
-      },
-      {
-        id: '3',
-        name: 'Medical',
-        code: 'medical',
-        icon: 'Stethoscope',
-        pages: [
-          { id: '4', name: 'Medical Records', path: '/medical/records', icon: 'Stethoscope' },
-          { id: '5', name: 'Prescriptions', path: '/medical/prescriptions', icon: 'Stethoscope' },
-        ],
-      },
-    ],
-  };
-
-  const tree = navTree || defaultNav;
+  const tree = navTree?.sections?.length > 0 ? navTree : { sections: [] };
 
   return (
     <>
@@ -185,13 +163,13 @@ export default function Sidebar({ user, navTree }: SidebarProps) {
           </nav>
 
           <div className="p-2 border-t border-neutral-700">
-            <Link
-              href="/api/v1/auth/signout"
-              className="flex items-center gap-2 px-3 py-2 text-red-400 hover:bg-neutral-700 rounded-lg transition-colors"
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2 px-3 py-2 text-red-400 hover:bg-neutral-700 rounded-lg transition-colors"
             >
               <LogOut className="w-4 h-4" />
               <span className="text-sm">Sign Out</span>
-            </Link>
+            </button>
           </div>
         </div>
       </aside>
