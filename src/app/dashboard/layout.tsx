@@ -66,7 +66,7 @@ export default async function DashboardLayout({
         />
       ) : (
         <Sidebar 
-          user={{ id: 'guest', email: 'guest@alhemam.sa', full_name: 'Guest', role_code: 'guest', role_name: 'Guest' }} 
+          user={{ id: 'guest', email: 'guest@alhemam.sa', full_name: 'زائر', role_code: 'guest', role_name: 'زائر' }} 
           navTree={navTree} 
         />
       )}

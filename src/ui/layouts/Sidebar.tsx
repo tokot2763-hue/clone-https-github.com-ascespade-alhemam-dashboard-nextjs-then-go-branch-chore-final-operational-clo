@@ -125,7 +125,7 @@ export default function Sidebar({ user, navTree }: SidebarProps) {
           <div className="p-4 dark:border-neutral-700 border border-gray-200">
             <div className="flex items-center gap-2">
               <Shield className="w-8 h-8 text-emerald-400" />
-              <span className="text-lg font-bold dark:text-white text-gray-900">Alhemam</span>
+              <span className="text-lg font-bold dark:text-white text-gray-900">{t('app.name')}</span>
             </div>
             <div className="mt-3 p-2 dark:bg-neutral-700 bg-gray-100 rounded-lg">
               <p className="text-sm dark:text-white text-gray-900 font-medium">{user.full_name || user.email}</p>
