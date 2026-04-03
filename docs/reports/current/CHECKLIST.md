@@ -5,7 +5,7 @@
 | Requirement | Status | Evidence |
 |-------------|--------|----------|
 | Reality audit of repository | ✅ DONE | FOUNDATION_REALITY_REPORT.md |
-| Architecture specs created | ✅ DONE | 5 architecture spec files |
+| Architecture specs created | ✅ DONE | 5+ architecture spec files |
 | Canonical navigation truth | ✅ DONE | NAVIGATION_RUNTIME_TRUTH_SPEC.md |
 | Project structure spec | ✅ DONE | PROJECT_STRUCTURE_SPEC.md |
 | DB schema spec | ✅ DONE | DB_SCHEMA_AND_RLS_SPEC.md |
@@ -50,8 +50,35 @@
 |-------------|--------|----------|
 | Service abstraction | ✅ DONE | createServiceClient() in auth.ts |
 | Clean extension seams | ✅ DONE | Platform/app/ui layers |
-| Documentation | ✅ DONE | 7 docs files in docs/ |
+| Documentation | ✅ DONE | 7+ docs files in docs/ |
 | Final truth report | ✅ DONE | FOUNDATION_FINAL_TRUTH_REPORT.md |
+
+## ⚠️ NEW Requirements from Prompt - Still Needed
+
+### Critical Non-Negotiables (NEW)
+- ❌ **NOT DONE**: Theme switching without persistence
+- ❌ **NOT DONE**: Locale switching without persistence
+- ❌ **NOT DONE**: Schema drift repair for user_preferences
+
+### Theme & Locale Persistence Requirements (NEW)
+| Requirement | Status |
+|-------------|--------|
+| Arabic default locale | ❌ NOT-implemented |
+| Dark default theme | ❌ NOT-implemented |
+| Persist theme preference | ❌ NOT-implemented |
+| Persist locale preference | ❌ NOT-implemented |
+| Load saved preferences after login | ❌ NOT-implemented |
+| Precedence order documented | ✅ DONE |
+
+### User Preferences Table (NEW)
+- ❌ NOT YET CREATED: user_preferences table
+- ❌ NOT YET WIRED: Preference loading in getSession()
+
+### Schema Repair Requirements (NEW)
+- ❌ NOT YET DONE: Deep schema audit
+- ❌ NOT YET DONE: Fix incorrect relations
+- ❌ NOT YET DONE: Repair broken foreign keys
+- ❌ NOT YET DONE: Normalize overlapping structures
 
 ## ✅ Quality Gates
 
@@ -64,6 +91,20 @@
 | Navigation dynamic | ✅ 68 pages |
 | Admin pages loadable | ✅ 5 pages |
 
+## Remaining Work
+
+### High Priority
+1. Create user_preferences table schema
+2. Add schema repair log table
+3. Wire preference loading in getSession()
+4. Add theme/locale picker to settings
+
+### Medium Priority
+5. Implement RTL/i18n properly
+6. Add light theme implementation
+7. Audit and repair schema drift
+8. Add audit_logs table
+
 ## What Was Removed/Fixed
 
 | Issue | Fix |
@@ -73,21 +114,9 @@
 | No admin surfaces | 5 new admin pages added |
 | Duplicated exports | Fixed index.ts |
 
-## What Was Preserved
+## Status: ⚠️ PARTIALLY COMPLETE
 
-| Component | Status |
-|-----------|-------|
-| Original auth flow | ✅ Kept, enhanced |
-| Database schema | ✅ Kept intact |
-| Navigation DB | ✅ Kept + extended |
-| Design system | ✅ Kept as-is |
-
-## Final Metrics
-
-- **Admin Pages**: 5 (dashboard, users, roles, navigation, settings)
-- **Navigation Pages**: 68 (was 63, +5 admin)
-- **User Roles**: 8 levels (100 to guest)
-- **Documentation**: 7 architecture reports
-- **Build Status**: ✅ All checks pass
-
-## Status: ✅ COMPLETE
+All original requirements done, but NEW requirements from latest prompt still pending:
+- User preferences persistence
+- Theme/locale persistence
+- Schema repair

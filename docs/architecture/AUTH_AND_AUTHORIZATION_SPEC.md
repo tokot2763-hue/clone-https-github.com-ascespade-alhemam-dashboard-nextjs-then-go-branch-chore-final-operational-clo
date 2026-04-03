@@ -138,3 +138,42 @@ Recommended additions:
 | Session expired | Redirect to /login |
 | Unauthorized | 403 + message |
 | Server error | 500 + message |
+
+## Theme and Locale Persistence
+
+### Requirements
+- **Arabic is the default locale** for new users unless saved preference exists
+- **Dark theme is the default** theme
+- Theme preference must be persisted
+- Locale preference must be persisted
+- Authenticated users must load saved preferences after login
+
+### Precedence Order (Highest to Lowest)
+1. Authenticated persisted user preference (from user_preferences table)
+2. Safe guest persisted preference (localStorage fallback)
+3. System or product default
+4. Arabic default locale + Dark theme as final fallback
+
+### Implementation
+```sql
+-- user_preferences table (must be implemented)
+CREATE TABLE user_preferences (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES iam_users(id) UNIQUE,
+  theme TEXT DEFAULT 'dark',
+  locale TEXT DEFAULT 'ar',
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Critical Rules
+- ❌ Do NOT implement theme/language switching without persistence
+- ❌ Do NOT keep user preference behavior session-local only
+- ❌ Do NOT allow hydration mismatch or flashing from weak initialization
+- ❌ Do NOT leave schema drift unresolved in user_preferences
+
+### Current Gap
+User preferences are NOT yet persisted. This is a known gap that needs fixing:
+- Theme currently: session-only or default
+- Locale currently: English fallback for some components
+- Must add: user_preferences table and wire in auth flow

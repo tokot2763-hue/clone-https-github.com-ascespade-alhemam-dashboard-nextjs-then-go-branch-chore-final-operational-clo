@@ -131,6 +131,49 @@ CREATE TABLE user_sessions (
 );
 ```
 
+### 5. User Preferences (Required for Theme/Locale)
+```sql
+CREATE TABLE user_preferences (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES iam_users(id) UNIQUE,
+  theme TEXT DEFAULT 'dark',  -- 'dark' or 'light'
+  locale TEXT DEFAULT 'ar',   -- 'ar' or 'en'
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+**Requirements:**
+- Arabic ('ar') is the DEFAULT locale for new users
+- Dark theme is the DEFAULT theme
+- Must persist for authenticated users
+- Must load saved preferences after login
+- Precedence: authenticated saved → guest fallback → system default
+
+### 6. Schema Repair Log (for drift tracking)
+```sql
+CREATE TABLE schema_repair_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  repair_type TEXT NOT NULL,
+  description TEXT,
+  executed_by UUID,
+  executed_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+## Schema Repair Requirements
+
+### Must Do:
+1. Audit schema deeply before extending
+2. Fix incorrect relations, missing constraints, weak indexes
+3. Repair broken foreign-key intent
+4. Normalize overlapping legacy/canonical structures
+5. Ensure tenant-aware auth, role resolution, permissions, navigation, admin ops, preferences
+
+### Must Not:
+1. Stack new tables on broken old tables without decision record
+2. Leave silent overlapping truth sources
+3. Create decorative schema not used by runtime
+
 ## Migration Safety
 
 Using forward-safe migrations:
