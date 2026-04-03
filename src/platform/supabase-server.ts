@@ -1,14 +1,21 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 
 const supabaseUrl = 'https://xjcxsdoblqckxafvzqsa.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqY3hzZG9ibHFja3hhZnZ6cXNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNzEyNzQsImV4cCI6MjA5MDc0NzI3NH0.1QiRSM16AcEmAFwKyqIbXZvhCtev7iUbsBDXZ9PB3Rc';
 
 export async function createServerClient(): Promise<SupabaseClient> {
   const cookieStore = await cookies();
+  const headerStore = await headers();
   
   const accessToken = cookieStore.get('sb-access-token')?.value;
   const refreshToken = cookieStore.get('sb-refresh-token')?.value;
+  
+  // Also try Authorization header
+  const authHeader = headerStore.get('authorization') || headerStore.get('Authorization');
+  const bearerToken = authHeader?.replace('Bearer ', '');
+
+  const tokenToUse = accessToken || bearerToken;
 
   return createClient(supabaseUrl, supabaseKey, {
     auth: {
@@ -17,7 +24,7 @@ export async function createServerClient(): Promise<SupabaseClient> {
       detectSessionInUrl: false,
     },
     global: {
-      headers: accessToken ? { cookie: `sb-access-token=${accessToken}; sb-refresh-token=${refreshToken || ''}` } : {},
+      headers: tokenToUse ? { cookie: `sb-access-token=${tokenToUse}; sb-refresh-token=${refreshToken || ''}` } : {},
     },
   });
 }
