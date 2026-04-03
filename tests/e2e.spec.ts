@@ -32,7 +32,7 @@ test.describe('Alhemam Healthcare Platform', () => {
     
     const data = await response.json();
     expect(data.status).toBe('ok');
-    expect(data.pages).toBe(63);
+    expect(data.pages).toBe(68);
     expect(data.sections).toBe(6);
   });
 });
