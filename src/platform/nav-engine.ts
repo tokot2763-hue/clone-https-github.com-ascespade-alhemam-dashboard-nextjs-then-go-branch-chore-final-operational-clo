@@ -61,18 +61,19 @@ export async function buildNavTree(userId: string, roleCode: string): Promise<Na
   });
 
   const navSections: NavSection[] = allSections
-    .map(section => ({
-      id: section.id,
-      name: section.label,
-      code: section.section_key,
-      icon: section.icon_key,
-      sort_order: section.sort_order,
-      pages: (pagesBySection.get(section.section_key) || [])
-        .sort((a, b) => a.sort_order - b.sort_order),
-    }))
-    .filter(s => s.pages.length > 0);
+    .map(section => {
+      const sectionPages = pagesBySection.get(section.section_key) || [];
+      return {
+        id: section.id,
+        name: section.label,
+        code: section.section_key,
+        icon: section.icon_key,
+        sort_order: section.sort_order,
+        pages: sectionPages.sort((a, b) => a.sort_order - b.sort_order),
+      };
+    });
 
-  console.log('nav-engine: returning sections:', navSections.length);
+  console.log('nav-engine: returning sections:', navSections.length, 'with pages:', navSections.map(s => `${s.name}: ${s.pages.length}`).join(', '));
   return { sections: navSections };
 }
 
