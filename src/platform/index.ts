@@ -1,6 +1,5 @@
 export { createServiceClient } from './supabase-server';
 
-export * from './db';
 export { 
   getSession, 
   requireAuth, 
@@ -12,7 +11,6 @@ export {
   getRoles,
   updateUserRole,
   createRole,
-  createUser,
 } from './auth';
 
 export * from './nav-engine';

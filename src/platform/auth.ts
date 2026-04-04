@@ -20,7 +20,7 @@ export interface User {
   role_code: string | null;
   role_name: string | null;
   role_level: number;
-  tenant_id: string | null;
+  organization_id: string | null;
 }
 
 export interface UserPreferences {
@@ -83,7 +83,7 @@ export function createServiceClient() {
   });
 }
 
-async function getUserPreferences(userId: string): Promise<UserPreferences> {
+export async function getUserPreferences(userId: string): Promise<UserPreferences> {
   const supabase = createServiceClient();
   
   try {
@@ -94,7 +94,6 @@ async function getUserPreferences(userId: string): Promise<UserPreferences> {
       .single();
     
     if (error || !data) {
-      // Return defaults if no preferences found
       return { ...DEFAULT_PREFERENCES, user_id: userId };
     }
     
@@ -104,7 +103,7 @@ async function getUserPreferences(userId: string): Promise<UserPreferences> {
       locale: data.locale || 'ar',
     };
   } catch (e) {
-    console.log('getUserPreferences: using defaults', e);
+    console.error('getUserPreferences error:', e);
     return { ...DEFAULT_PREFERENCES, user_id: userId };
   }
 }
@@ -120,7 +119,7 @@ export async function updateUserPreferences(userId: string, updates: Partial<Use
         theme: updates.theme || 'dark',
         locale: updates.locale || 'ar',
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' });
+      });
     
     if (error) throw error;
     return true;
@@ -128,6 +127,52 @@ export async function updateUserPreferences(userId: string, updates: Partial<Use
     console.error('updateUserPreferences error:', e);
     return false;
   }
+}
+
+async function resolveUserRoleFromDb(supabase: SupabaseClient, authUserId: string): Promise<{role_code: string; role_name: string; role_level: number; role_id: string | null; organization_id: string | null}> {
+  // Try user_roles table from migration 003
+  const { data: userRole } = await supabase
+    .from('user_roles')
+    .select('*, role:roles(*)')
+    .eq('user_id', authUserId)
+    .single();
+
+  if (userRole?.role) {
+    return {
+      role_code: userRole.role.key,
+      role_name: userRole.role.name_ar || userRole.role.name,
+      role_level: userRole.role.level,
+      role_id: userRole.role_id,
+      organization_id: userRole.organization_id,
+    };
+  }
+
+  // Fallback: Get highest system role
+  const { data: existingRole } = await supabase
+    .from('roles')
+    .select('*')
+    .eq('is_system', true)
+    .order('level', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (existingRole) {
+    return {
+      role_code: existingRole.key,
+      role_name: existingRole.name_ar || existingRole.name,
+      role_level: existingRole.level,
+      role_id: existingRole.id,
+      organization_id: null,
+    };
+  }
+
+  return {
+    role_code: 'guest',
+    role_name: 'زائر',
+    role_level: 0,
+    role_id: null,
+    organization_id: null,
+  };
 }
 
 export async function getSession(): Promise<Session | null> {
@@ -144,65 +189,26 @@ export async function getSession(): Promise<Session | null> {
   }
 
   const userEmail = session.user.email || '';
-  
-  const { data: iamUser } = await supabase
-    .from('iam_users')
-    .select('*, role:iam_roles(*)')
-    .eq('id', session.user.id)
-    .single();
+  const userId = session.user.id;
 
-  let role_code = 'guest';
-  let role_name = 'Guest';
-  let role_level = 0;
-  let role_id: string | null = null;
-  let tenant_id: string | null = null;
-  let full_name: string | null = null;
+  const roleInfo = await resolveUserRoleFromDb(supabase, userId);
 
-  if (iamUser?.role) {
-    role_code = iamUser.role.role_key;
-    role_name = iamUser.role.name;
-    role_level = iamUser.role.role_level;
-    role_id = iamUser.role_id;
-    tenant_id = iamUser.tenant_id;
-    full_name = iamUser.full_name;
-  } else {
-    const emailPrefix = userEmail.split('@')[0];
-    
-    const emailRoleMap: Record<string, { code: string; name: string; level: number }> = {
-      admin: { code: 'admin', name: 'System Admin', level: 100 },
-      system_manager: { code: 'admin', name: 'System Admin', level: 100 },
-      medical_supervisor: { code: 'super_doctor', name: 'Super Doctor', level: 60 },
-      supervisor: { code: 'super_doctor', name: 'Super Doctor', level: 60 },
-      doctor: { code: 'doctor', name: 'Doctor', level: 50 },
-      nurse: { code: 'nurse', name: 'Nurse', level: 40 },
-      receptionist: { code: 'receptionist', name: 'Receptionist', level: 30 },
-      insurance: { code: 'accountant', name: 'Accountant', level: 35 },
-      patient: { code: 'patient', name: 'Patient', level: 10 },
-      guardian: { code: 'guardian', name: 'Guardian', level: 20 },
-      parent: { code: 'guardian', name: 'Guardian', level: 20 },
-    };
+  const fullName = session.user.user_metadata?.full_name as string | null 
+    || session.user.user_metadata?.name as string | null
+    || userEmail.split('@')[0];
 
-    const emailRole = emailRoleMap[emailPrefix] || { code: 'patient', name: 'Patient', level: 10 };
-    role_code = emailRole.code;
-    role_name = emailRole.name;
-    role_level = emailRole.level;
-    
-    full_name = session.user.user_metadata?.full_name || userEmail;
-  }
-
-  // Load user preferences (with Arabic default)
-  const preferences = await getUserPreferences(session.user.id);
+  const preferences = await getUserPreferences(userId);
 
   return {
     user: {
-      id: session.user.id,
+      id: userId,
       email: userEmail,
-      full_name: full_name,
-      role_id: role_id,
-      role_code: role_code,
-      role_name: role_name,
-      role_level: role_level,
-      tenant_id: tenant_id,
+      full_name: fullName,
+      role_id: roleInfo.role_id,
+      role_code: roleInfo.role_code,
+      role_name: roleInfo.role_name,
+      role_level: roleInfo.role_level,
+      organization_id: roleInfo.organization_id,
     },
     access_token: session.access_token,
     preferences,
@@ -251,9 +257,9 @@ export async function getUsers() {
   const supabase = createServiceClient();
   
   const { data, error } = await supabase
-    .from('iam_users')
-    .select('*, role:iam_roles(*)')
-    .order('created_at', { ascending: false });
+    .from('user_roles')
+    .select('*, role:roles(*)')
+    .order('assigned_at', { ascending: false });
 
   if (error) throw error;
   return data;
@@ -263,48 +269,43 @@ export async function getRoles() {
   const supabase = createServiceClient();
   
   const { data, error } = await supabase
-    .from('iam_roles')
+    .from('roles')
     .select('*')
-    .order('role_level', { ascending: false });
+    .order('level', { ascending: false });
 
   if (error) throw error;
   return data;
 }
 
-export async function updateUserRole(userId: string, roleId: string | null) {
+export async function updateUserRole(userId: string, roleId: string | null, organizationId?: string) {
   const supabase = createServiceClient();
   
-  const { error } = await supabase
-    .from('iam_users')
-    .update({ role_id: roleId })
-    .eq('id', userId);
+  if (roleId) {
+    const { error } = await supabase
+      .from('user_roles')
+      .upsert({
+        user_id: userId,
+        role_id: roleId,
+        organization_id: organizationId || null,
+        assigned_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,role_id,organization_id' });
 
-  if (error) throw error;
+    if (error) throw error;
+  }
 }
 
-export async function createRole(roleKey: string, name: string, roleLevel: number) {
+export async function createRole(roleKey: string, name: string, nameAr: string, level: number, organizationId?: string) {
   const supabase = createServiceClient();
   
   const { data, error } = await supabase
-    .from('iam_roles')
-    .insert({ role_key: roleKey, name, role_level: roleLevel })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-export async function createUser(email: string, fullName: string, roleId?: string, tenantId?: string) {
-  const supabase = createServiceClient();
-  
-  const { data, error } = await supabase
-    .from('iam_users')
+    .from('roles')
     .insert({
-      email,
-      full_name: fullName,
-      role_id: roleId,
-      tenant_id: tenantId || '00000000-0000-0000-0000-000000000001',
+      organization_id: organizationId || null,
+      key: roleKey,
+      name,
+      name_ar: nameAr,
+      level,
+      is_system: !organizationId,
     })
     .select()
     .single();

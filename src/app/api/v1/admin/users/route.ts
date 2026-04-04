@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     }
     
     if (action === 'createRole') {
-      const role = await createRole(data.roleKey, data.name, data.roleLevel);
+      const role = await createRole(data.roleKey, data.name, data.nameAr || data.name, data.roleLevel);
       return NextResponse.json({ success: true, role });
     }
     

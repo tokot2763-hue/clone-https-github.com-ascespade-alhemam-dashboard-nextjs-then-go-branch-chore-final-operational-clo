@@ -116,8 +116,8 @@ export default async function AdminDashboard() {
                 <span className="text-emerald-400">{session.user.role_level}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-neutral-300">Tenant</span>
-                <span className="text-white">{session.user.tenant_id || 'Default'}</span>
+                <span className="text-neutral-300">Organization</span>
+                <span className="text-white">{session.user.organization_id || 'Default'}</span>
               </div>
             </div>
           </div>
