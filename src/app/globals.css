@@ -98,6 +98,19 @@ body {
   font-family: var(--font-cairo), var(--font-ibm-arabic), sans-serif;
   font-weight: 700;
   line-height: 1.35;
+  word-spacing: 2px;
+}
+
+[lang="ar"] h1 { font-size: 2.5rem; }
+[lang="ar"] h2 { font-size: 2rem; }
+[lang="ar"] h3 { font-size: 1.5rem; }
+[lang="ar"] h4 { font-size: 1.25rem; }
+[lang="ar"] h5 { font-size: 1.125rem; }
+[lang="ar"] h6 { font-size: 1rem; }
+
+[lang="ar"] input,
+[lang="ar"] textarea {
+  font-family: var(--font-cairo), var(--font-ibm-arabic), sans-serif;
 }
 
 [lang="en"] body {
