@@ -130,6 +130,17 @@
     "patient": "مريض",
     "guest": "زائر"
   },
+  "home": {
+    "keyFeatures": "المميزات الرئيسية",
+    "schemaDriven": "مبنى على المخطط",
+    "schemaDrivenDesc": "جميع الصفحات والأقسام والتنقل تُقرأ من قاعدة البيانات.",
+    "roleBasedAccess": "وصول مبني على الأدوار",
+    "roleBasedAccessDesc": "11 دوراً محدداً مسبقاً مع صلاحيات مفصلة.",
+    "multiTenant": "متعدد المستأجرين",
+    "multiTenantDesc": "مبني لمنظمات الرعاية الصحية.",
+    "availableRoles": "الأدوار المتاحة",
+    "poweredBy": "مدعوم بـ Next.js 16 + Supabase"
+  },
   "errors": {
     "unauthorized": "غير مصرح",
     "forbidden": "ممنوع",

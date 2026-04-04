@@ -52,34 +52,34 @@ export default function Home() {
       </section>
 
       <section className={`px-8 py-16 ${isDark ? 'bg-neutral-800/50' : 'bg-gray-200'}`}>
-        <h2 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'} text-center mb-12`}>Key Features</h2>
+        <h2 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'} text-center mb-12`}>{t('home.keyFeatures')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           <div className={`p-6 ${isDark ? 'bg-neutral-800' : 'bg-white'} ${isDark ? 'border-neutral-700' : 'border-gray-300'} rounded-xl border`}>
             <Database className="w-12 h-12 text-emerald-400 mb-4" />
-            <h3 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'} mb-2`}>Schema-Driven</h3>
+            <h3 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'} mb-2`}>{t('home.schemaDriven')}</h3>
             <p className={isDark ? 'text-neutral-400' : 'text-gray-600'}>
-              All pages, sections, and navigation are read from the database.
+              {t('home.schemaDrivenDesc')}
             </p>
           </div>
           <div className={`p-6 ${isDark ? 'bg-neutral-800' : 'bg-white'} ${isDark ? 'border-neutral-700' : 'border-gray-300'} rounded-xl border`}>
             <Shield className="w-12 h-12 text-emerald-400 mb-4" />
-            <h3 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'} mb-2`}>Role-Based Access</h3>
+            <h3 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'} mb-2`}>{t('home.roleBasedAccess')}</h3>
             <p className={isDark ? 'text-neutral-400' : 'text-gray-600'}>
-              11 predefined roles with granular permissions.
+              {t('home.roleBasedAccessDesc')}
             </p>
           </div>
           <div className={`p-6 ${isDark ? 'bg-neutral-800' : 'bg-white'} ${isDark ? 'border-neutral-700' : 'border-gray-300'} rounded-xl border`}>
             <Activity className="w-12 h-12 text-emerald-400 mb-4" />
-            <h3 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'} mb-2`}>Multi-Tenant</h3>
+            <h3 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'} mb-2`}>{t('home.multiTenant')}</h3>
             <p className={isDark ? 'text-neutral-400' : 'text-gray-600'}>
-              Built for healthcare organizations.
+              {t('home.multiTenantDesc')}
             </p>
           </div>
         </div>
       </section>
 
       <section className="px-8 py-16">
-        <h2 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'} text-center mb-12`}>Available Roles</h2>
+        <h2 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'} text-center mb-12`}>{t('home.availableRoles')}</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
           {['admin', 'doctor', 'nurse', 'patient'].map((role) => (
             <div key={role} className={`p-4 ${isDark ? 'bg-neutral-800' : 'bg-white'} ${isDark ? 'border-neutral-700' : 'border-gray-300'} rounded-lg border`}>
@@ -92,7 +92,7 @@ export default function Home() {
 
       <footer className={`px-8 py-8 ${isDark ? 'border-neutral-700' : 'border-gray-300'} border-t text-center`}>
         <p className={isDark ? 'text-neutral-500' : 'text-gray-500'}>
-          Powered by Next.js 16 + Supabase
+          {t('home.poweredBy')}
         </p>
       </footer>
     </main>

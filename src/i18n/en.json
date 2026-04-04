@@ -130,6 +130,17 @@
     "patient": "Patient",
     "guest": "Guest"
   },
+  "home": {
+    "keyFeatures": "Key Features",
+    "schemaDriven": "Schema-Driven",
+    "schemaDrivenDesc": "All pages, sections, and navigation are read from the database.",
+    "roleBasedAccess": "Role-Based Access",
+    "roleBasedAccessDesc": "11 predefined roles with granular permissions.",
+    "multiTenant": "Multi-Tenant",
+    "multiTenantDesc": "Built for healthcare organizations.",
+    "availableRoles": "Available Roles",
+    "poweredBy": "Powered by Next.js 16 + Supabase"
+  },
   "errors": {
     "unauthorized": "Unauthorized",
     "forbidden": "Forbidden",
